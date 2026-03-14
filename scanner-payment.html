@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Scanner Payment — COD</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0c0c0d;
+    --bg-card: #161618;
+    --bg-input: #1e1e21;
+    --border: #2a2a2e;
+    --text: #f5f5f5;
+    --text-dim: #8b8b8f;
+    --accent: #f43f5e;
+    --success: #22c55e;
+    --success-glow: rgba(34,197,94,0.12);
+    --error: #ef4444;
+    --error-glow: rgba(239,68,68,0.12);
+    --gold: #f59e0b;
+    --gold-glow: rgba(245,158,11,0.12);
+    --blue: #3b82f6;
+    --neutral: #a0a0a8;
+    --scanner: #00d4ff;
+    --scanner-glow: rgba(0,212,255,0.12);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'IBM Plex Sans Arabic', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 1rem;
+  }
+
+  .container { max-width: 620px; margin: 0 auto; }
+
+  .header { text-align: center; margin-bottom: 1.5rem; padding-top: 0.5rem; }
+  .header h1 { font-size: 1.4rem; font-weight: 700; margin-bottom: 0.3rem; }
+  .header p { color: #ffffff; font-size: 0.85rem; }
+
+  .card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+  }
+
+  .card-title {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-dim);
+    margin-bottom: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  /* Scanner input area */
+  .scanner-area {
+    position: relative;
+  }
+
+  .scanner-input {
+    width: 100%;
+    background: var(--bg-input);
+    border: 2px solid var(--scanner);
+    border-radius: 10px;
+    padding: 1rem 1rem 1rem 3rem;
+    color: var(--text);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 1rem;
+    outline: none;
+    direction: ltr;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    box-shadow: 0 0 0 0 rgba(0,212,255,0);
+  }
+
+  .scanner-input:focus {
+    border-color: var(--scanner);
+    box-shadow: 0 0 12px rgba(0,212,255,0.15);
+  }
+
+  .scanner-input::placeholder { color: var(--text-dim); font-size: 0.85rem; }
+
+  .scanner-icon {
+    position: absolute;
+    left: 0.85rem;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 1.1rem;
+    pointer-events: none;
+  }
+
+  .scanner-hint {
+    font-size: 0.75rem;
+    color: var(--scanner);
+    margin-top: 0.4rem;
+    text-align: left;
+    direction: ltr;
+    opacity: 0.7;
+  }
+
+  /* Stats bar */
+  .stats-bar {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+    display: none;
+  }
+  .stats-bar.visible { display: flex; }
+
+  .stat-chip {
+    flex: 1;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 0.65rem 0.75rem;
+    text-align: center;
+  }
+  .stat-chip .stat-val {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 1.1rem;
+    font-weight: 700;
+    display: block;
+  }
+  .stat-chip .stat-lbl {
+    font-size: 0.72rem;
+    color: var(--text-dim);
+    display: block;
+    margin-top: 0.1rem;
+  }
+  .stat-chip.gold .stat-val  { color: var(--gold); }
+  .stat-chip.blue .stat-val  { color: var(--blue); }
+  .stat-chip.green .stat-val { color: var(--success); }
+
+  /* Buttons row */
+  .btn-row {
+    display: flex;
+    gap: 0.6rem;
+    margin-bottom: 1rem;
+  }
+
+  .btn {
+    flex: 1;
+    padding: 0.85rem;
+    border-radius: 10px;
+    font-family: inherit;
+    font-size: 0.9rem;
+    font-weight: 700;
+    cursor: pointer;
+    border: none;
+    transition: all 0.2s;
+  }
+
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  .btn-clear {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    flex: 0 0 auto;
+    padding: 0.85rem 1.1rem;
+  }
+  .btn-clear:hover:not(:disabled) { border-color: var(--error); color: var(--error); }
+
+  .btn-pay {
+    background: var(--gold);
+    color: #000;
+  }
+  .btn-pay:hover:not(:disabled) { filter: brightness(1.1); }
+
+  /* Orders table */
+  .orders-table-wrap {
+    display: none;
+    margin-bottom: 1rem;
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+  }
+  .orders-table-wrap.visible { display: block; }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+  }
+
+  thead { background: var(--bg-input); }
+
+  thead th {
+    padding: 0.65rem 0.85rem;
+    text-align: right;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    border-bottom: 1px solid var(--border);
+  }
+  thead th.col-status { text-align: center; }
+  thead th.col-amount { text-align: left; direction: ltr; }
+
+  tbody tr {
+    border-bottom: 1px solid var(--border);
+    transition: background 0.15s;
+  }
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr.row-new { animation: rowHighlight 1s ease; }
+
+  @keyframes rowHighlight {
+    0%   { background: rgba(0,212,255,0.08); }
+    100% { background: transparent; }
+  }
+
+  tbody td { padding: 0.65rem 0.85rem; vertical-align: middle; }
+
+  .order-num-cell {
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 600;
+    color: var(--neutral);
+    font-size: 0.88rem;
+  }
+
+  .amount-cell {
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    font-size: 0.9rem;
+    text-align: left;
+    direction: ltr;
+  }
+
+  .status-cell    { text-align: center; }
+  .financial-cell {
+    font-size: 0.78rem;
+    color: var(--text-dim);
+    font-family: 'JetBrains Mono', monospace;
+    text-align: center;
+  }
+
+  /* Badges */
+  .badge {
+    display: inline-block;
+    padding: 0.2rem 0.55rem;
+    border-radius: 6px;
+    font-size: 0.72rem;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  .badge-scanning  { background: rgba(0,212,255,0.15); color: var(--scanner); border: 1px solid rgba(0,212,255,0.3); }
+  .badge-loading   { background: rgba(59,130,246,0.15); color: var(--blue); border: 1px solid rgba(59,130,246,0.3); }
+  .badge-ready     { background: rgba(245,158,11,0.12); color: var(--gold); border: 1px solid rgba(245,158,11,0.25); }
+  .badge-done      { background: var(--success-glow); color: var(--success); border: 1px solid rgba(34,197,94,0.3); }
+  .badge-paid-full { background: var(--success-glow); color: var(--success); border: 1px solid rgba(34,197,94,0.3); }
+  .badge-refund    { background: var(--error-glow); color: var(--error); border: 1px solid rgba(239,68,68,0.3); }
+  .badge-error     { background: var(--error-glow); color: var(--error); border: 1px solid rgba(239,68,68,0.3); }
+  .badge-notfound  { background: rgba(139,139,143,0.12); color: var(--text-dim); border: 1px solid rgba(139,139,143,0.25); }
+  .badge-skipped   { background: rgba(139,139,143,0.12); color: var(--text-dim); border: 1px solid rgba(139,139,143,0.25); }
+
+  /* Result box */
+  .result-box {
+    border-radius: 10px;
+    padding: 0.9rem 1rem;
+    margin-bottom: 0.75rem;
+    display: none;
+    font-size: 0.9rem;
+  }
+  .result-box.success { display: block; background: var(--success-glow); border: 1px solid rgba(34,197,94,0.3); color: var(--success); }
+  .result-box.error   { display: block; background: var(--error-glow); border: 1px solid rgba(239,68,68,0.3); color: var(--error); }
+  .result-box .result-title  { font-weight: 700; font-size: 0.95rem; margin-bottom: 0.2rem; }
+  .result-box .result-detail { font-size: 0.8rem; opacity: 0.8; font-family: 'JetBrains Mono', monospace; }
+
+  /* Toast */
+  .toast {
+    position: fixed;
+    top: 1rem;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--scanner);
+    color: #000;
+    padding: 0.5rem 1.2rem;
+    border-radius: 20px;
+    font-size: 0.82rem;
+    font-weight: 700;
+    opacity: 0;
+    transition: opacity 0.25s;
+    z-index: 100;
+    pointer-events: none;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .toast.show { opacity: 1; }
+
+  /* Progress */
+  .progress-bar-wrap {
+    height: 3px;
+    background: var(--border);
+    border-radius: 2px;
+    margin-bottom: 1rem;
+    display: none;
+    overflow: hidden;
+  }
+  .progress-bar-wrap.visible { display: block; }
+  .progress-bar {
+    height: 100%;
+    background: var(--gold);
+    border-radius: 2px;
+    transition: width 0.3s ease;
+    width: 0%;
+  }
+
+  /* Settings */
+  .settings-toggle {
+    width: 100%;
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    padding: 0.6rem;
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: 0.85rem;
+    cursor: pointer;
+    margin-bottom: 0.75rem;
+    transition: border-color 0.2s;
+  }
+  .settings-toggle:hover { border-color: var(--text-dim); }
+
+  .settings-content { display: none; margin-bottom: 0.75rem; }
+  .settings-content.active { display: block; }
+
+  .input-group { margin-bottom: 0.75rem; }
+  .input-group:last-child { margin-bottom: 0; }
+  .input-group label { display: block; font-size: 0.8rem; color: var(--text-dim); margin-bottom: 0.35rem; }
+  .input-group input {
+    width: 100%;
+    background: var(--bg-input);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 0.75rem 1rem;
+    color: var(--text);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.85rem;
+    outline: none;
+    transition: border-color 0.2s;
+    direction: ltr;
+  }
+  .input-group input:focus { border-color: var(--accent); }
+
+  .spinner {
+    width: 14px; height: 14px;
+    border: 2px solid transparent;
+    border-top-color: currentColor;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    display: inline-block;
+    vertical-align: middle;
+    margin-right: 0.3rem;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+
+<div class="toast" id="toast"></div>
+
+<div class="container">
+
+  <header class="header">
+    <h1>🔫 Scanner Payment — COD</h1>
+    <p>مسح الأوردرات بالسكانر وتسجيل التحصيل الكامل</p>
+  </header>
+
+  <!-- Scanner input -->
+  <div class="card">
+    <div class="card-title">ماسح الباركود</div>
+    <div class="scanner-area">
+      <span class="scanner-icon">🔫</span>
+      <input
+        type="text"
+        id="scannerInput"
+        class="scanner-input"
+        placeholder="امسح الباركود هنا..."
+        autocomplete="off"
+        spellcheck="false"
+        inputmode="none"
+      >
+    </div>
+    <div class="scanner-hint">💡 Scanner Gun: امسح وسيتم الاستعلام والإضافة تلقائياً</div>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats-bar" id="statsBar">
+    <div class="stat-chip blue">
+      <span class="stat-val" id="statCount">0</span>
+      <span class="stat-lbl">أوردر</span>
+    </div>
+    <div class="stat-chip gold">
+      <span class="stat-val" id="statTotal">—</span>
+      <span class="stat-lbl">إجمالي EGP</span>
+    </div>
+    <div class="stat-chip green">
+      <span class="stat-val" id="statDone">0</span>
+      <span class="stat-lbl">تم التحصيل</span>
+    </div>
+  </div>
+
+  <!-- Action buttons -->
+  <div class="btn-row">
+    <button class="btn btn-clear" id="clearBtn" onclick="clearAll()" disabled title="مسح الكل">🗑</button>
+    <button class="btn btn-pay" id="payBtn" onclick="confirmBulkPay()" disabled>
+      💵 تسجيل التحصيل الكامل
+    </button>
+  </div>
+
+  <!-- Progress bar -->
+  <div class="progress-bar-wrap" id="progressWrap">
+    <div class="progress-bar" id="progressBar"></div>
+  </div>
+
+  <!-- Result summary -->
+  <div class="result-box" id="resultBox">
+    <div class="result-title"  id="resultTitle"></div>
+    <div class="result-detail" id="resultDetail"></div>
+  </div>
+
+  <!-- Orders table -->
+  <div class="orders-table-wrap" id="tableWrap">
+    <table>
+      <thead>
+        <tr>
+          <th>رقم الأوردر</th>
+          <th class="col-amount">المبلغ المستحق</th>
+          <th class="col-status">Payment Status</th>
+          <th class="col-status">الحالة</th>
+        </tr>
+      </thead>
+      <tbody id="tableBody"></tbody>
+    </table>
+  </div>
+
+  <!-- Settings -->
+  <button class="settings-toggle" onclick="toggleSettings()">⚙️ الإعدادات</button>
+  <div class="settings-content" id="settings">
+    <div class="card">
+      <div class="input-group">
+        <label>Worker URL</label>
+        <input type="text" id="workerUrl" placeholder="https://your-worker.workers.dev/scanner-payment">
+      </div>
+      <div class="input-group">
+        <label>Worker Secret</label>
+        <input type="password" id="workerSecret" placeholder="WORKER_SECRET">
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  // ── Settings ──────────────────────────────────────────────────────
+  document.getElementById('workerUrl').value    = localStorage.getItem('scanner_worker_url')    || '';
+  document.getElementById('workerSecret').value = localStorage.getItem('scanner_worker_secret') || '';
+  document.getElementById('workerUrl').addEventListener('change',    e => localStorage.setItem('scanner_worker_url',    e.target.value));
+  document.getElementById('workerSecret').addEventListener('change', e => localStorage.setItem('scanner_worker_secret', e.target.value));
+
+  // ── State ─────────────────────────────────────────────────────────
+  // orders: [{ id, orderName, amount, canMarkAsPaid, skipReason, financialStatus, status, error }]
+  let orders = [];
+  let isProcessing = false;
+
+  // ── Format numbers as Latin digits ────────────────────────────────
+  function fmt(num) {
+    return Number(num).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+
+  function financialLabel(status) {
+    const map = {
+      PAID:               'Paid',
+      PARTIALLY_PAID:     'Partially Paid',
+      PENDING:            'Pending',
+      AUTHORIZED:         'Authorized',
+      PARTIALLY_REFUNDED: 'Partially Refunded',
+      REFUNDED:           'Refunded',
+      VOIDED:             'Voided',
+      EXPIRED:            'Expired',
+    };
+    return map[status] || status || '—';
+  }
+
+  // ── Scanner adaptive input ────────────────────────────────────────
+  const scannerInput = document.getElementById('scannerInput');
+  let inputTimeout   = null;
+  let lastInputTime  = 0;
+
+  // Keep focus on scanner input always
+  function refocus() { scannerInput.focus(); }
+  window.addEventListener('load', refocus);
+  document.addEventListener('click', e => {
+    if (e.target.tagName !== 'INPUT' && e.target.tagName !== 'BUTTON') {
+      setTimeout(refocus, 50);
+    }
+  });
+
+  scannerInput.addEventListener('input', () => {
+    if (isProcessing) return;
+    if (inputTimeout) clearTimeout(inputTimeout);
+
+    const now = Date.now();
+    const gap = now - lastInputTime;
+    lastInputTime = now;
+
+    // Scanner guns type fast (<80ms between chars) → short timeout
+    const delay = gap < 80 ? 150 : 400;
+    inputTimeout = setTimeout(handleScan, delay);
+  });
+
+  scannerInput.addEventListener('keypress', e => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      if (inputTimeout) clearTimeout(inputTimeout);
+      handleScan();
+    }
+  });
+
+  async function handleScan() {
+    const raw = scannerInput.value.trim();
+    scannerInput.value = '';
+    scannerInput.focus();
+
+    if (!raw || !/^\d+$/.test(raw)) return;
+
+    // Duplicate check
+    if (orders.find(o => o.id === raw)) {
+      showToast(`⚠️ موجود بالفعل`, 'warning');
+      return;
+    }
+
+    const workerUrl    = document.getElementById('workerUrl').value.trim();
+    const workerSecret = document.getElementById('workerSecret').value.trim();
+    if (!workerUrl || !workerSecret) {
+      document.getElementById('settings').classList.add('active');
+      showResult(false, 'أدخل Worker URL و Worker Secret', '');
+      return;
+    }
+
+    // Add row immediately with scanning badge
+    const order = {
+      id: raw, orderName: null, amount: null,
+      canMarkAsPaid: null, skipReason: null,
+      financialStatus: null, status: 'scanning', error: null
+    };
+    orders.unshift(order);
+    showTable();
+    updateStats();
+    renderTable();
+    showToast(`🔫 ${raw}`, 'scan');
+
+    // Fetch preview
+    try {
+      const res  = await fetch(workerUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${workerSecret}` },
+        body: JSON.stringify({ action: 'preview', orderId: raw }),
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        order.orderName      = data.orderName;
+        order.amount         = parseFloat(data.amount);
+        order.canMarkAsPaid  = data.canMarkAsPaid;
+        order.skipReason     = data.skipReason || null;
+        order.financialStatus = data.financialStatus || null;
+        order.status         = data.canMarkAsPaid ? 'ready' : 'skipped';
+      } else if (data.notFound) {
+        order.status = 'notfound';
+      } else {
+        order.status = 'error';
+        order.error  = data.error || 'خطأ';
+      }
+    } catch (e) {
+      order.status = 'error';
+      order.error  = 'خطأ في الاتصال';
+    }
+
+    updateStats();
+    renderTable();
+    updatePayBtn();
+    refocus();
+  }
+
+  // ── Clear all ─────────────────────────────────────────────────────
+  function clearAll() {
+    if (!confirm('مسح كل الأوردرات؟')) return;
+    orders = [];
+    document.getElementById('tableWrap').classList.remove('visible');
+    document.getElementById('statsBar').classList.remove('visible');
+    updateStats();
+    updatePayBtn();
+    hideResult();
+    refocus();
+  }
+
+  // ── Bulk pay ──────────────────────────────────────────────────────
+  async function confirmBulkPay() {
+    const readyOrders = orders.filter(o => o.status === 'ready');
+    if (!readyOrders.length) return;
+
+    const total = readyOrders.reduce((s, o) => s + o.amount, 0);
+    const msg   = `ستقوم بتسجيل التحصيل الكامل لعدد ${readyOrders.length} أوردر\nالإجمالي: ${fmt(total)} EGP\n\nمتأكد؟`;
+    if (!confirm(msg)) return;
+
+    const workerUrl    = document.getElementById('workerUrl').value.trim();
+    const workerSecret = document.getElementById('workerSecret').value.trim();
+
+    isProcessing = true;
+    document.getElementById('payBtn').disabled  = true;
+    document.getElementById('clearBtn').disabled = true;
+    setProgress(0);
+    hideResult();
+
+    let successCount = 0, failCount = 0, done = 0;
+
+    for (const order of readyOrders) {
+      order.status = 'loading';
+      renderTable();
+
+      try {
+        const res  = await fetch(workerUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${workerSecret}` },
+          body: JSON.stringify({ action: 'pay', orderId: order.id, amount: order.amount.toFixed(2) }),
+        });
+        const data = await res.json();
+
+        if (data.success) {
+          order.status          = 'done';
+          order.financialStatus = 'PAID';
+          successCount++;
+        } else {
+          order.status = 'error';
+          order.error  = data.error || 'فشل';
+          failCount++;
+        }
+      } catch (e) {
+        order.status = 'error';
+        order.error  = 'خطأ في الاتصال';
+        failCount++;
+      }
+
+      done++;
+      setProgress(done / readyOrders.length * 100);
+      updateStats();
+      renderTable();
+    }
+
+    isProcessing = false;
+    document.getElementById('clearBtn').disabled = false;
+    updatePayBtn();
+
+    const paidTotal = orders.filter(o => o.status === 'done').reduce((s, o) => s + o.amount, 0);
+
+    if (successCount > 0 && failCount === 0) {
+      showResult(true,
+        `✅ تم تسجيل التحصيل بنجاح لـ ${successCount} أوردر`,
+        `الإجمالي: ${fmt(paidTotal)} EGP`
+      );
+    } else if (successCount > 0) {
+      showResult(true, `✅ ${successCount} نجح  ⚠️ ${failCount} فشل`, 'راجع الجدول للتفاصيل');
+    } else {
+      showResult(false, 'فشل التحصيل لكل الأوردرات', 'راجع الجدول للتفاصيل');
+    }
+
+    refocus();
+  }
+
+  // ── Render ────────────────────────────────────────────────────────
+  function renderTable() {
+    const tbody = document.getElementById('tableBody');
+    tbody.innerHTML = orders.map((o, i) => {
+
+      // Order name cell — show #name if available, else ID
+      const nameDisplay = o.orderName ? o.orderName : `ID: ${o.id}`;
+
+      // Amount cell
+      let amountCell = '<span style="color:var(--text-dim)">—</span>';
+      if (o.amount != null) {
+        let color = 'var(--gold)';
+        if (o.amount < 0)               color = 'var(--error)';
+        else if (o.status === 'skipped') color = 'var(--text-dim)';
+        amountCell = `<span style="color:${color}">${fmt(o.amount)} EGP</span>`;
+      }
+
+      // Badge
+      let badge;
+      if      (o.status === 'scanning') badge = `<span class="badge badge-scanning"><span class="spinner"></span>مسح...</span>`;
+      else if (o.status === 'loading')  badge = `<span class="badge badge-loading"><span class="spinner"></span>جاري...</span>`;
+      else if (o.status === 'ready')    badge = `<span class="badge badge-ready">جاهز</span>`;
+      else if (o.status === 'done')     badge = `<span class="badge badge-done">✓ تم التحصيل</span>`;
+      else if (o.status === 'skipped') {
+        if      (o.skipReason === 'مدفوع بالكامل')  badge = `<span class="badge badge-paid-full">مدفوع بالكامل</span>`;
+        else if (o.skipReason === 'مستحق استرداد')  badge = `<span class="badge badge-refund">يستحق الاسترداد</span>`;
+        else badge = `<span class="badge badge-skipped">${o.skipReason || 'مُتخطى'}</span>`;
+      }
+      else if (o.status === 'notfound') badge = `<span class="badge badge-notfound">غير موجود</span>`;
+      else                              badge = `<span class="badge badge-error" title="${o.error||''}">خطأ</span>`;
+
+      const finLabel = o.financialStatus ? financialLabel(o.financialStatus) : '—';
+      const isNew    = i === 0 ? 'row-new' : '';
+
+      return `<tr class="${isNew}">
+        <td class="order-num-cell">${nameDisplay}</td>
+        <td class="amount-cell">${amountCell}</td>
+        <td class="financial-cell">${finLabel}</td>
+        <td class="status-cell">${badge}</td>
+      </tr>`;
+    }).join('');
+  }
+
+  function showTable() {
+    document.getElementById('tableWrap').classList.add('visible');
+    document.getElementById('statsBar').classList.add('visible');
+  }
+
+  function updateStats() {
+    const total = orders.length;
+    const ready = orders.filter(o => o.status === 'ready');
+    const done  = orders.filter(o => o.status === 'done');
+    const sum   = [...ready, ...done].reduce((s, o) => s + (o.amount || 0), 0);
+
+    document.getElementById('statCount').textContent = total;
+    document.getElementById('statTotal').textContent = sum > 0 ? fmt(sum) : '—';
+    document.getElementById('statDone').textContent  = done.length;
+    document.getElementById('clearBtn').disabled     = total === 0;
+  }
+
+  function updatePayBtn() {
+    const ready = orders.filter(o => o.status === 'ready').length;
+    document.getElementById('payBtn').disabled = ready === 0 || isProcessing;
+  }
+
+  function setProgress(pct) {
+    const wrap = document.getElementById('progressWrap');
+    const bar  = document.getElementById('progressBar');
+    wrap.classList.add('visible');
+    bar.style.width = pct + '%';
+    if (pct >= 100) setTimeout(() => wrap.classList.remove('visible'), 800);
+  }
+
+  function showResult(success, title, detail) {
+    const box = document.getElementById('resultBox');
+    box.className = `result-box ${success ? 'success' : 'error'}`;
+    document.getElementById('resultTitle').textContent  = title;
+    document.getElementById('resultDetail').textContent = detail;
+  }
+
+  function hideResult() {
+    document.getElementById('resultBox').className = 'result-box';
+  }
+
+  function toggleSettings() {
+    document.getElementById('settings').classList.toggle('active');
+  }
+
+  function showToast(msg, type = 'scan') {
+    const toast = document.getElementById('toast');
+    toast.textContent = msg;
+    toast.style.background = type === 'warning' ? 'var(--gold)' : 'var(--scanner)';
+    toast.style.color = '#000';
+    toast.classList.add('show');
+    setTimeout(() => toast.classList.remove('show'), 1200);
+  }
+</script>
+</body>
+</html>
