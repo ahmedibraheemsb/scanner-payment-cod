@@ -36,11 +36,11 @@
     padding: 1rem;
   }
 
-  .container { max-width: 620px; margin: 0 auto; }
+  .container { max-width: 680px; margin: 0 auto; }
 
   .header { text-align: center; margin-bottom: 1.5rem; padding-top: 0.5rem; }
   .header h1 { font-size: 1.4rem; font-weight: 700; margin-bottom: 0.3rem; }
-  .header p { color: #ffffff; font-size: 0.85rem; }
+  .header p  { color: #ffffff; font-size: 0.85rem; }
 
   .card {
     background: var(--bg-card);
@@ -59,10 +59,8 @@
     letter-spacing: 0.05em;
   }
 
-  /* Scanner input area */
-  .scanner-area {
-    position: relative;
-  }
+  /* ── Scanner input ── */
+  .scanner-area { position: relative; }
 
   .scanner-input {
     width: 100%;
@@ -76,14 +74,8 @@
     outline: none;
     direction: ltr;
     transition: border-color 0.2s, box-shadow 0.2s;
-    box-shadow: 0 0 0 0 rgba(0,212,255,0);
   }
-
-  .scanner-input:focus {
-    border-color: var(--scanner);
-    box-shadow: 0 0 12px rgba(0,212,255,0.15);
-  }
-
+  .scanner-input:focus { box-shadow: 0 0 12px rgba(0,212,255,0.15); }
   .scanner-input::placeholder { color: var(--text-dim); font-size: 0.85rem; }
 
   .scanner-icon {
@@ -104,13 +96,8 @@
     opacity: 0.7;
   }
 
-  /* Stats bar */
-  .stats-bar {
-    display: flex;
-    gap: 0.5rem;
-    margin-bottom: 1rem;
-    display: none;
-  }
+  /* ── Stats bar ── */
+  .stats-bar { display: none; gap: 0.5rem; margin-bottom: 1rem; }
   .stats-bar.visible { display: flex; }
 
   .stat-chip {
@@ -121,28 +108,14 @@
     padding: 0.65rem 0.75rem;
     text-align: center;
   }
-  .stat-chip .stat-val {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 1.1rem;
-    font-weight: 700;
-    display: block;
-  }
-  .stat-chip .stat-lbl {
-    font-size: 0.72rem;
-    color: var(--text-dim);
-    display: block;
-    margin-top: 0.1rem;
-  }
-  .stat-chip.gold .stat-val  { color: var(--gold); }
-  .stat-chip.blue .stat-val  { color: var(--blue); }
+  .stat-chip .stat-val { font-family: 'JetBrains Mono', monospace; font-size: 1.1rem; font-weight: 700; display: block; }
+  .stat-chip .stat-lbl { font-size: 0.72rem; color: var(--text-dim); display: block; margin-top: 0.1rem; }
+  .stat-chip.gold  .stat-val { color: var(--gold); }
+  .stat-chip.blue  .stat-val { color: var(--blue); }
   .stat-chip.green .stat-val { color: var(--success); }
 
-  /* Buttons row */
-  .btn-row {
-    display: flex;
-    gap: 0.6rem;
-    margin-bottom: 1rem;
-  }
+  /* ── Buttons ── */
+  .btn-row { display: flex; gap: 0.6rem; margin-bottom: 1rem; }
 
   .btn {
     flex: 1;
@@ -155,7 +128,6 @@
     border: none;
     transition: all 0.2s;
   }
-
   .btn:disabled { opacity: 0.4; cursor: not-allowed; }
 
   .btn-clear {
@@ -167,13 +139,10 @@
   }
   .btn-clear:hover:not(:disabled) { border-color: var(--error); color: var(--error); }
 
-  .btn-pay {
-    background: var(--gold);
-    color: #000;
-  }
+  .btn-pay { background: var(--gold); color: #000; }
   .btn-pay:hover:not(:disabled) { filter: brightness(1.1); }
 
-  /* Orders table */
+  /* ── Orders table ── */
   .orders-table-wrap {
     display: none;
     margin-bottom: 1rem;
@@ -183,14 +152,8 @@
   }
   .orders-table-wrap.visible { display: block; }
 
-  table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 0.85rem;
-  }
-
+  table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
   thead { background: var(--bg-input); }
-
   thead th {
     padding: 0.65rem 0.85rem;
     text-align: right;
@@ -204,12 +167,15 @@
   thead th.col-status { text-align: center; }
   thead th.col-amount { text-align: left; direction: ltr; }
 
-  tbody tr {
+  /* Main order row */
+  tbody tr.order-row {
     border-bottom: 1px solid var(--border);
+    cursor: pointer;
     transition: background 0.15s;
   }
-  tbody tr:last-child { border-bottom: none; }
-  tbody tr.row-new { animation: rowHighlight 1s ease; }
+  tbody tr.order-row:hover { background: rgba(255,255,255,0.02); }
+  tbody tr.order-row.row-new { animation: rowHighlight 1s ease; }
+  tbody tr.order-row.expanded { background: rgba(0,212,255,0.03); border-bottom: none; }
 
   @keyframes rowHighlight {
     0%   { background: rgba(0,212,255,0.08); }
@@ -217,6 +183,16 @@
   }
 
   tbody td { padding: 0.65rem 0.85rem; vertical-align: middle; }
+
+  /* Expand indicator */
+  .expand-icon {
+    font-size: 0.65rem;
+    color: var(--text-dim);
+    display: inline-block;
+    transition: transform 0.2s;
+    margin-right: 0.3rem;
+  }
+  tr.expanded .expand-icon { transform: rotate(90deg); }
 
   .order-num-cell {
     font-family: 'JetBrains Mono', monospace;
@@ -233,7 +209,7 @@
     direction: ltr;
   }
 
-  .status-cell    { text-align: center; }
+  .status-cell   { text-align: center; }
   .financial-cell {
     font-size: 0.78rem;
     color: var(--text-dim);
@@ -241,146 +217,142 @@
     text-align: center;
   }
 
-  /* Badges */
-  .badge {
-    display: inline-block;
-    padding: 0.2rem 0.55rem;
-    border-radius: 6px;
-    font-size: 0.72rem;
-    font-weight: 600;
-    white-space: nowrap;
+  /* Expanded detail row */
+  tbody tr.detail-row { display: none; }
+  tbody tr.detail-row.visible { display: table-row; }
+  tbody tr.detail-row td {
+    padding: 0 0 0.75rem 0;
+    border-bottom: 1px solid var(--border);
   }
 
+  .detail-box {
+    margin: 0 0.85rem;
+    background: var(--bg-input);
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+  }
+
+  .detail-section {
+    padding: 0.55rem 0.75rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .detail-section:last-child { border-bottom: none; }
+
+  .detail-label {
+    font-size: 0.7rem;
+    color: var(--text-dim);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 0.3rem;
+  }
+
+  .sku-list { display: flex; flex-wrap: wrap; gap: 0.3rem; }
+  .sku-tag {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 0.2rem 0.5rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.72rem;
+    color: var(--scanner);
+    direction: ltr;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+  }
+  .sku-qty { color: var(--text-dim); font-size: 0.65rem; }
+
+  .shipping-info {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.8rem;
+    direction: ltr;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .shipping-title { color: var(--text-dim); }
+  .shipping-amount { color: var(--gold); font-weight: 700; }
+
+  /* ── Badges ── */
+  .badge { display: inline-block; padding: 0.2rem 0.55rem; border-radius: 6px; font-size: 0.72rem; font-weight: 600; white-space: nowrap; }
   .badge-scanning  { background: rgba(0,212,255,0.15); color: var(--scanner); border: 1px solid rgba(0,212,255,0.3); }
-  .badge-loading   { background: rgba(59,130,246,0.15); color: var(--blue); border: 1px solid rgba(59,130,246,0.3); }
-  .badge-ready     { background: rgba(245,158,11,0.12); color: var(--gold); border: 1px solid rgba(245,158,11,0.25); }
-  .badge-done      { background: var(--success-glow); color: var(--success); border: 1px solid rgba(34,197,94,0.3); }
-  .badge-paid-full { background: var(--success-glow); color: var(--success); border: 1px solid rgba(34,197,94,0.3); }
-  .badge-refund    { background: var(--error-glow); color: var(--error); border: 1px solid rgba(239,68,68,0.3); }
-  .badge-error     { background: var(--error-glow); color: var(--error); border: 1px solid rgba(239,68,68,0.3); }
+  .badge-loading   { background: rgba(59,130,246,0.15); color: var(--blue);    border: 1px solid rgba(59,130,246,0.3); }
+  .badge-ready     { background: rgba(245,158,11,0.12); color: var(--gold);    border: 1px solid rgba(245,158,11,0.25); }
+  .badge-done      { background: var(--success-glow);   color: var(--success); border: 1px solid rgba(34,197,94,0.3); }
+  .badge-paid-full { background: var(--success-glow);   color: var(--success); border: 1px solid rgba(34,197,94,0.3); }
+  .badge-refund    { background: var(--error-glow);     color: var(--error);   border: 1px solid rgba(239,68,68,0.3); }
+  .badge-error     { background: var(--error-glow);     color: var(--error);   border: 1px solid rgba(239,68,68,0.3); }
   .badge-notfound  { background: rgba(139,139,143,0.12); color: var(--text-dim); border: 1px solid rgba(139,139,143,0.25); }
   .badge-skipped   { background: rgba(139,139,143,0.12); color: var(--text-dim); border: 1px solid rgba(139,139,143,0.25); }
 
-  /* Result box */
-  .result-box {
-    border-radius: 10px;
-    padding: 0.9rem 1rem;
-    margin-bottom: 0.75rem;
-    display: none;
-    font-size: 0.9rem;
-  }
-  .result-box.success { display: block; background: var(--success-glow); border: 1px solid rgba(34,197,94,0.3); color: var(--success); }
-  .result-box.error   { display: block; background: var(--error-glow); border: 1px solid rgba(239,68,68,0.3); color: var(--error); }
+  /* ── Result box ── */
+  .result-box { border-radius: 10px; padding: 0.9rem 1rem; margin-bottom: 0.75rem; display: none; font-size: 0.9rem; }
+  .result-box.success { display: block; background: var(--success-glow); border: 1px solid rgba(34,197,94,0.3);  color: var(--success); }
+  .result-box.error   { display: block; background: var(--error-glow);   border: 1px solid rgba(239,68,68,0.3);  color: var(--error); }
   .result-box .result-title  { font-weight: 700; font-size: 0.95rem; margin-bottom: 0.2rem; }
   .result-box .result-detail { font-size: 0.8rem; opacity: 0.8; font-family: 'JetBrains Mono', monospace; }
 
-  /* Toast */
+  /* ── Toast ── */
   .toast {
-    position: fixed;
-    top: 1rem;
-    left: 50%;
-    transform: translateX(-50%);
-    background: var(--scanner);
-    color: #000;
-    padding: 0.5rem 1.2rem;
-    border-radius: 20px;
-    font-size: 0.82rem;
-    font-weight: 700;
-    opacity: 0;
-    transition: opacity 0.25s;
-    z-index: 100;
-    pointer-events: none;
-    font-family: 'JetBrains Mono', monospace;
+    position: fixed; top: 1rem; left: 50%; transform: translateX(-50%);
+    background: var(--scanner); color: #000;
+    padding: 0.5rem 1.2rem; border-radius: 20px;
+    font-size: 0.82rem; font-weight: 700;
+    opacity: 0; transition: opacity 0.25s; z-index: 100;
+    pointer-events: none; font-family: 'JetBrains Mono', monospace;
   }
   .toast.show { opacity: 1; }
 
-  /* Progress */
-  .progress-bar-wrap {
-    height: 3px;
-    background: var(--border);
-    border-radius: 2px;
-    margin-bottom: 1rem;
-    display: none;
-    overflow: hidden;
-  }
+  /* ── Progress ── */
+  .progress-bar-wrap { height: 3px; background: var(--border); border-radius: 2px; margin-bottom: 1rem; display: none; overflow: hidden; }
   .progress-bar-wrap.visible { display: block; }
-  .progress-bar {
-    height: 100%;
-    background: var(--gold);
-    border-radius: 2px;
-    transition: width 0.3s ease;
-    width: 0%;
-  }
+  .progress-bar { height: 100%; background: var(--gold); border-radius: 2px; transition: width 0.3s ease; width: 0%; }
 
-  /* Settings */
+  /* ── Settings ── */
   .settings-toggle {
-    width: 100%;
-    background: none;
-    border: 1px solid var(--border);
-    color: var(--text-dim);
-    padding: 0.6rem;
-    border-radius: 8px;
-    font-family: inherit;
-    font-size: 0.85rem;
-    cursor: pointer;
-    margin-bottom: 0.75rem;
-    transition: border-color 0.2s;
+    width: 100%; background: none; border: 1px solid var(--border);
+    color: var(--text-dim); padding: 0.6rem; border-radius: 8px;
+    font-family: inherit; font-size: 0.85rem; cursor: pointer;
+    margin-bottom: 0.75rem; transition: border-color 0.2s;
   }
   .settings-toggle:hover { border-color: var(--text-dim); }
-
   .settings-content { display: none; margin-bottom: 0.75rem; }
   .settings-content.active { display: block; }
-
   .input-group { margin-bottom: 0.75rem; }
   .input-group:last-child { margin-bottom: 0; }
   .input-group label { display: block; font-size: 0.8rem; color: var(--text-dim); margin-bottom: 0.35rem; }
   .input-group input {
-    width: 100%;
-    background: var(--bg-input);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 0.75rem 1rem;
-    color: var(--text);
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.85rem;
-    outline: none;
-    transition: border-color 0.2s;
-    direction: ltr;
+    width: 100%; background: var(--bg-input); border: 1px solid var(--border);
+    border-radius: 10px; padding: 0.75rem 1rem; color: var(--text);
+    font-family: 'JetBrains Mono', monospace; font-size: 0.85rem;
+    outline: none; transition: border-color 0.2s; direction: ltr;
   }
   .input-group input:focus { border-color: var(--accent); }
 
   .spinner {
-    width: 14px; height: 14px;
-    border: 2px solid transparent;
-    border-top-color: currentColor;
-    border-radius: 50%;
-    animation: spin 0.8s linear infinite;
-    display: inline-block;
-    vertical-align: middle;
-    margin-right: 0.3rem;
+    width: 14px; height: 14px; border: 2px solid transparent;
+    border-top-color: currentColor; border-radius: 50%;
+    animation: spin 0.8s linear infinite; display: inline-block;
+    vertical-align: middle; margin-right: 0.3rem;
   }
   @keyframes spin { to { transform: rotate(360deg); } }
 
-  /* ── Log section ─────────────────────────────────────────────── */
+  /* ── Log section ── */
   .log-section { margin-top: 1rem; }
   .log-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; }
   .log-header h2 { font-size: 0.95rem; font-weight: 600; display: flex; align-items: center; gap: 0.5rem; }
   .log-actions { display: flex; gap: 0.5rem; }
   .log-btn {
-    background: none;
-    border: 1px solid var(--border);
-    color: var(--text-dim);
-    padding: 0.35rem 0.7rem;
-    border-radius: 6px;
-    font-family: inherit;
-    font-size: 0.75rem;
-    cursor: pointer;
-    transition: all 0.2s;
+    background: none; border: 1px solid var(--border); color: var(--text-dim);
+    padding: 0.35rem 0.7rem; border-radius: 6px; font-family: inherit;
+    font-size: 0.75rem; cursor: pointer; transition: all 0.2s;
   }
   .log-btn:hover { border-color: var(--text-dim); color: var(--text); }
   .log-btn.export:hover { border-color: var(--success); color: var(--success); }
   .log-empty { text-align: center; padding: 1.5rem; color: var(--text-dim); font-size: 0.85rem; border: 1px solid var(--border); border-radius: 8px; }
-  .log-list { max-height: 400px; overflow-y: auto; }
+  .log-list { max-height: 420px; overflow-y: auto; }
   .log-entry { background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; margin-bottom: 0.5rem; overflow: hidden; transition: border-color 0.2s; }
   .log-entry:hover { border-color: var(--text-dim); }
   .log-entry-header { display: flex; justify-content: space-between; align-items: center; padding: 0.7rem 0.85rem; cursor: pointer; gap: 0.5rem; }
@@ -395,15 +367,38 @@
   .stat-error   { color: var(--error);   font-family: 'JetBrains Mono', monospace; font-weight: 700; }
   .log-toggle { color: var(--text-dim); font-size: 0.8rem; flex-shrink: 0; transition: transform 0.2s; }
   .log-entry.open .log-toggle { transform: rotate(90deg); }
-  .log-entry-details { display: none; border-top: 1px solid var(--border); max-height: 200px; overflow-y: auto; }
+  .log-entry-details { display: none; border-top: 1px solid var(--border); max-height: 300px; overflow-y: auto; }
   .log-entry.open .log-entry-details { display: block; }
-  .log-detail-item { display: flex; justify-content: space-between; align-items: center; padding: 0.45rem 0.85rem; border-bottom: 1px solid var(--border); font-size: 0.8rem; }
+
+  /* Log detail item — expandable with SKUs/shipping */
+  .log-detail-item { border-bottom: 1px solid var(--border); }
   .log-detail-item:last-child { border-bottom: none; }
-  .log-detail-order { font-family: 'JetBrains Mono', monospace; font-weight: 600; }
+  .log-detail-main {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 0.45rem 0.85rem; font-size: 0.8rem; cursor: pointer;
+    transition: background 0.15s;
+  }
+  .log-detail-main:hover { background: rgba(255,255,255,0.02); }
+  .log-detail-order  { font-family: 'JetBrains Mono', monospace; font-weight: 600; }
   .log-detail-amount { font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: var(--gold); }
   .log-detail-status { padding: 0.15rem 0.5rem; border-radius: 8px; font-size: 0.7rem; }
   .log-detail-success { background: var(--success-glow); color: var(--success); }
   .log-detail-error   { background: var(--error-glow);   color: var(--error); }
+
+  /* Expanded sub-detail inside log */
+  .log-detail-sub { display: none; padding: 0.4rem 0.85rem 0.55rem; border-top: 1px solid var(--border); background: rgba(0,0,0,0.15); }
+  .log-detail-item.open .log-detail-sub { display: block; }
+  .log-sub-label { font-size: 0.68rem; color: var(--text-dim); font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 0.25rem; margin-top: 0.3rem; }
+  .log-sub-label:first-child { margin-top: 0; }
+  .log-sku-list { display: flex; flex-wrap: wrap; gap: 0.25rem; }
+  .log-sku-tag {
+    background: rgba(0,212,255,0.08); border: 1px solid rgba(0,212,255,0.2);
+    border-radius: 5px; padding: 0.15rem 0.4rem;
+    font-family: 'JetBrains Mono', monospace; font-size: 0.68rem; color: var(--scanner);
+    direction: ltr;
+  }
+  .log-shipping-val { font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: var(--gold); direction: ltr; }
+
   .log-check { width: 16px; height: 16px; accent-color: var(--gold); cursor: pointer; flex-shrink: 0; margin-left: 0.4rem; }
   .log-btn.export-selected { display: none; }
   .log-btn.export-selected.visible { display: inline-block; }
@@ -430,13 +425,9 @@
     <div class="scanner-area">
       <span class="scanner-icon">🔫</span>
       <input
-        type="text"
-        id="scannerInput"
-        class="scanner-input"
+        type="text" id="scannerInput" class="scanner-input"
         placeholder="امسح الباركود هنا..."
-        autocomplete="off"
-        spellcheck="false"
-        inputmode="none"
+        autocomplete="off" spellcheck="false" inputmode="none"
       >
     </div>
     <div class="scanner-hint">💡 Scanner Gun: امسح وسيتم الاستعلام والإضافة تلقائياً</div>
@@ -461,17 +452,17 @@
   <!-- Action buttons -->
   <div class="btn-row">
     <button class="btn btn-clear" id="clearBtn" onclick="clearAll()" disabled title="مسح الكل">🗑</button>
-    <button class="btn btn-pay" id="payBtn" onclick="confirmBulkPay()" disabled>
+    <button class="btn btn-pay"   id="payBtn"   onclick="confirmBulkPay()" disabled>
       💵 تسجيل التحصيل الكامل
     </button>
   </div>
 
-  <!-- Progress bar -->
+  <!-- Progress -->
   <div class="progress-bar-wrap" id="progressWrap">
     <div class="progress-bar" id="progressBar"></div>
   </div>
 
-  <!-- Result summary -->
+  <!-- Result -->
   <div class="result-box" id="resultBox">
     <div class="result-title"  id="resultTitle"></div>
     <div class="result-detail" id="resultDetail"></div>
@@ -515,7 +506,7 @@
     </div>
   </div>
 
-  <!-- Log section -->
+  <!-- Log -->
   <div class="log-section">
     <div class="log-header">
       <h2>📜 سجل العمليات <span class="log-sync-status local" id="logSyncStatus">محلي</span></h2>
@@ -534,108 +525,79 @@
 
 <script>
   // ── Settings ──────────────────────────────────────────────────────
-  document.getElementById('workerUrl').value    = localStorage.getItem('scanner_worker_url')    || '';
-  document.getElementById('workerSecret').value = localStorage.getItem('scanner_worker_secret') || '';
-  document.getElementById('logWorkerUrl').value    = localStorage.getItem('cod_log_worker_url')    || '';
-  document.getElementById('logWorkerSecret').value = localStorage.getItem('cod_log_worker_secret') || '';
-  document.getElementById('workerUrl').addEventListener('change',    e => localStorage.setItem('scanner_worker_url',    e.target.value));
-  document.getElementById('workerSecret').addEventListener('change', e => localStorage.setItem('scanner_worker_secret', e.target.value));
-  document.getElementById('logWorkerUrl').addEventListener('change',    e => localStorage.setItem('cod_log_worker_url',    e.target.value));
-  document.getElementById('logWorkerSecret').addEventListener('change', e => localStorage.setItem('cod_log_worker_secret', e.target.value));
+  const $ = id => document.getElementById(id);
+  $('workerUrl').value       = localStorage.getItem('scanner_worker_url')    || '';
+  $('workerSecret').value    = localStorage.getItem('scanner_worker_secret') || '';
+  $('logWorkerUrl').value    = localStorage.getItem('cod_log_worker_url')    || '';
+  $('logWorkerSecret').value = localStorage.getItem('cod_log_worker_secret') || '';
+  $('workerUrl').addEventListener('change',       e => localStorage.setItem('scanner_worker_url',    e.target.value));
+  $('workerSecret').addEventListener('change',    e => localStorage.setItem('scanner_worker_secret', e.target.value));
+  $('logWorkerUrl').addEventListener('change',    e => localStorage.setItem('cod_log_worker_url',    e.target.value));
+  $('logWorkerSecret').addEventListener('change', e => localStorage.setItem('cod_log_worker_secret', e.target.value));
 
   // ── State ─────────────────────────────────────────────────────────
-  // orders: [{ id, orderName, amount, canMarkAsPaid, skipReason, financialStatus, status, error }]
   let orders = [];
   let isProcessing = false;
 
-  // ── Format numbers as Latin digits ────────────────────────────────
+  // ── Helpers ───────────────────────────────────────────────────────
   function fmt(num) {
     return Number(num).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   }
 
-  function financialLabel(status) {
-    const map = {
-      PAID:               'Paid',
-      PARTIALLY_PAID:     'Partially Paid',
-      PENDING:            'Pending',
-      AUTHORIZED:         'Authorized',
-      PARTIALLY_REFUNDED: 'Partially Refunded',
-      REFUNDED:           'Refunded',
-      VOIDED:             'Voided',
-      EXPIRED:            'Expired',
-    };
-    return map[status] || status || '—';
+  function financialLabel(s) {
+    return { PAID:'Paid', PARTIALLY_PAID:'Partially Paid', PENDING:'Pending',
+      AUTHORIZED:'Authorized', PARTIALLY_REFUNDED:'Partially Refunded',
+      REFUNDED:'Refunded', VOIDED:'Voided', EXPIRED:'Expired' }[s] || s || '—';
   }
 
-  // ── Scanner adaptive input ────────────────────────────────────────
-  const scannerInput = document.getElementById('scannerInput');
-  let inputTimeout   = null;
-  let lastInputTime  = 0;
+  // ── Scanner input ─────────────────────────────────────────────────
+  const scannerInput = $('scannerInput');
+  let inputTimeout = null, lastInputTime = 0;
 
-  // Keep focus on scanner input always
   function refocus() { scannerInput.focus(); }
   window.addEventListener('load', refocus);
   document.addEventListener('click', e => {
-    if (e.target.tagName !== 'INPUT' && e.target.tagName !== 'BUTTON') {
-      setTimeout(refocus, 50);
-    }
+    if (e.target.tagName !== 'INPUT' && e.target.tagName !== 'BUTTON') setTimeout(refocus, 50);
   });
 
   scannerInput.addEventListener('input', () => {
     if (isProcessing) return;
     if (inputTimeout) clearTimeout(inputTimeout);
-
-    const now = Date.now();
-    const gap = now - lastInputTime;
+    const now = Date.now(), gap = now - lastInputTime;
     lastInputTime = now;
-
-    // Scanner guns type fast (<80ms between chars) → short timeout
-    const delay = gap < 80 ? 150 : 400;
-    inputTimeout = setTimeout(handleScan, delay);
+    inputTimeout = setTimeout(handleScan, gap < 80 ? 150 : 400);
   });
 
   scannerInput.addEventListener('keypress', e => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      if (inputTimeout) clearTimeout(inputTimeout);
-      handleScan();
-    }
+    if (e.key === 'Enter') { e.preventDefault(); if (inputTimeout) clearTimeout(inputTimeout); handleScan(); }
   });
 
   async function handleScan() {
     const raw = scannerInput.value.trim();
     scannerInput.value = '';
     scannerInput.focus();
-
     if (!raw || !/^\d+$/.test(raw)) return;
 
-    // Duplicate check
-    if (orders.find(o => o.id === raw)) {
-      showToast(`⚠️ موجود بالفعل`, 'warning');
-      return;
-    }
+    if (orders.find(o => o.id === raw)) { showToast('⚠️ موجود بالفعل', 'warning'); return; }
 
-    const workerUrl    = document.getElementById('workerUrl').value.trim();
-    const workerSecret = document.getElementById('workerSecret').value.trim();
+    const workerUrl    = $('workerUrl').value.trim();
+    const workerSecret = $('workerSecret').value.trim();
     if (!workerUrl || !workerSecret) {
-      document.getElementById('settings').classList.add('active');
+      $('settings').classList.add('active');
       showResult(false, 'أدخل Worker URL و Worker Secret', '');
       return;
     }
 
-    // Add row immediately with scanning badge
     const order = {
       id: raw, orderName: null, amount: null,
-      canMarkAsPaid: null, skipReason: null,
-      financialStatus: null, status: 'scanning', error: null
+      canMarkAsPaid: null, skipReason: null, financialStatus: null,
+      shipping: null, lineItems: [],
+      status: 'scanning', error: null
     };
     orders.unshift(order);
-    showTable();
-    updateStats();
-    renderTable();
+    showTable(); updateStats(); renderTable();
     showToast(`🔫 ${raw}`, 'scan');
 
-    // Fetch preview
     try {
       const res  = await fetch(workerUrl, {
         method: 'POST',
@@ -650,34 +612,28 @@
         order.canMarkAsPaid  = data.canMarkAsPaid;
         order.skipReason     = data.skipReason || null;
         order.financialStatus = data.financialStatus || null;
+        order.shipping       = data.shipping || null;
+        order.lineItems      = data.lineItems || [];
         order.status         = data.canMarkAsPaid ? 'ready' : 'skipped';
       } else if (data.notFound) {
         order.status = 'notfound';
       } else {
-        order.status = 'error';
-        order.error  = data.error || 'خطأ';
+        order.status = 'error'; order.error = data.error || 'خطأ';
       }
     } catch (e) {
-      order.status = 'error';
-      order.error  = 'خطأ في الاتصال';
+      order.status = 'error'; order.error = 'خطأ في الاتصال';
     }
 
-    updateStats();
-    renderTable();
-    updatePayBtn();
-    refocus();
+    updateStats(); renderTable(); updatePayBtn(); refocus();
   }
 
-  // ── Clear all ─────────────────────────────────────────────────────
+  // ── Clear ─────────────────────────────────────────────────────────
   function clearAll() {
     if (!confirm('مسح كل الأوردرات؟')) return;
     orders = [];
-    document.getElementById('tableWrap').classList.remove('visible');
-    document.getElementById('statsBar').classList.remove('visible');
-    updateStats();
-    updatePayBtn();
-    hideResult();
-    refocus();
+    $('tableWrap').classList.remove('visible');
+    $('statsBar').classList.remove('visible');
+    updateStats(); updatePayBtn(); hideResult(); refocus();
   }
 
   // ── Bulk pay ──────────────────────────────────────────────────────
@@ -686,24 +642,20 @@
     if (!readyOrders.length) return;
 
     const total = readyOrders.reduce((s, o) => s + o.amount, 0);
-    const msg   = `ستقوم بتسجيل التحصيل الكامل لعدد ${readyOrders.length} أوردر\nالإجمالي: ${fmt(total)} EGP\n\nمتأكد؟`;
-    if (!confirm(msg)) return;
+    if (!confirm(`ستقوم بتسجيل التحصيل الكامل لعدد ${readyOrders.length} أوردر\nالإجمالي: ${fmt(total)} EGP\n\nمتأكد؟`)) return;
 
-    const workerUrl    = document.getElementById('workerUrl').value.trim();
-    const workerSecret = document.getElementById('workerSecret').value.trim();
+    const workerUrl    = $('workerUrl').value.trim();
+    const workerSecret = $('workerSecret').value.trim();
 
     isProcessing = true;
-    document.getElementById('payBtn').disabled  = true;
-    document.getElementById('clearBtn').disabled = true;
-    setProgress(0);
-    hideResult();
+    $('payBtn').disabled  = true;
+    $('clearBtn').disabled = true;
+    setProgress(0); hideResult();
 
     let successCount = 0, failCount = 0, done = 0;
 
     for (const order of readyOrders) {
-      order.status = 'loading';
-      renderTable();
-
+      order.status = 'loading'; renderTable();
       try {
         const res  = await fetch(workerUrl, {
           method: 'POST',
@@ -711,35 +663,22 @@
           body: JSON.stringify({ action: 'pay', orderId: order.id, amount: order.amount.toFixed(2) }),
         });
         const data = await res.json();
-
-        if (data.success) {
-          order.status          = 'done';
-          order.financialStatus = 'PAID';
-          successCount++;
-        } else {
-          order.status = 'error';
-          order.error  = data.error || 'فشل';
-          failCount++;
-        }
-      } catch (e) {
-        order.status = 'error';
-        order.error  = 'خطأ في الاتصال';
-        failCount++;
-      }
+        if (data.success) { order.status = 'done'; order.financialStatus = 'PAID'; successCount++; }
+        else { order.status = 'error'; order.error = data.error || 'فشل'; failCount++; }
+      } catch (e) { order.status = 'error'; order.error = 'خطأ في الاتصال'; failCount++; }
 
       done++;
       setProgress(done / readyOrders.length * 100);
-      updateStats();
-      renderTable();
+      updateStats(); renderTable();
     }
 
     isProcessing = false;
-    document.getElementById('clearBtn').disabled = false;
+    $('clearBtn').disabled = false;
     updatePayBtn();
 
     const paidTotal = orders.filter(o => o.status === 'done').reduce((s, o) => s + o.amount, 0);
 
-    // ── Save to log ───────────────────────────────────────────────
+    // Save to log
     const logEntry = {
       date: new Date().toISOString(),
       totalOrders: readyOrders.length,
@@ -747,43 +686,49 @@
       errors: failCount,
       totalAmount: paidTotal.toFixed(2),
       orders: readyOrders.map(o => ({
-        order: o.id,
+        order:     o.id,
         orderName: o.orderName || '',
-        amount: o.amount != null ? o.amount.toFixed(2) : '0.00',
-        status: o.status === 'done' ? 'success' : 'error',
-        error: o.error || null,
+        amount:    o.amount != null ? o.amount.toFixed(2) : '0.00',
+        shipping:  o.shipping || null,
+        lineItems: o.lineItems || [],
+        status:    o.status === 'done' ? 'success' : 'error',
+        error:     o.error || null,
       })),
     };
     saveLogEntry(logEntry);
 
     if (successCount > 0 && failCount === 0) {
-      showResult(true,
-        `✅ تم تسجيل التحصيل بنجاح لـ ${successCount} أوردر`,
-        `الإجمالي: ${fmt(paidTotal)} EGP`
-      );
+      showResult(true, `✅ تم تسجيل التحصيل بنجاح لـ ${successCount} أوردر`, `الإجمالي: ${fmt(paidTotal)} EGP`);
     } else if (successCount > 0) {
       showResult(true, `✅ ${successCount} نجح  ⚠️ ${failCount} فشل`, 'راجع الجدول للتفاصيل');
     } else {
       showResult(false, 'فشل التحصيل لكل الأوردرات', 'راجع الجدول للتفاصيل');
     }
-
     refocus();
   }
 
-  // ── Render ────────────────────────────────────────────────────────
-  function renderTable() {
-    const tbody = document.getElementById('tableBody');
-    tbody.innerHTML = orders.map((o, i) => {
+  // ── Toggle expand row ─────────────────────────────────────────────
+  function toggleRow(idx) {
+    const mainRow   = document.querySelector(`tr.order-row[data-idx="${idx}"]`);
+    const detailRow = document.querySelector(`tr.detail-row[data-idx="${idx}"]`);
+    if (!mainRow || !detailRow) return;
+    const isOpen = mainRow.classList.contains('expanded');
+    mainRow.classList.toggle('expanded', !isOpen);
+    detailRow.classList.toggle('visible',  !isOpen);
+  }
 
-      // Order name cell — show #name if available, else ID
+  // ── Render table ──────────────────────────────────────────────────
+  function renderTable() {
+    const tbody = $('tableBody');
+    const rows  = [];
+
+    orders.forEach((o, i) => {
       const nameDisplay = o.orderName ? o.orderName : `ID: ${o.id}`;
 
-      // Amount cell
+      // Amount
       let amountCell = '<span style="color:var(--text-dim)">—</span>';
       if (o.amount != null) {
-        let color = 'var(--gold)';
-        if (o.amount < 0)               color = 'var(--error)';
-        else if (o.status === 'skipped') color = 'var(--text-dim)';
+        let color = o.amount < 0 ? 'var(--error)' : o.status === 'skipped' ? 'var(--text-dim)' : 'var(--gold)';
         amountCell = `<span style="color:${color}">${fmt(o.amount)} EGP</span>`;
       }
 
@@ -794,92 +739,114 @@
       else if (o.status === 'ready')    badge = `<span class="badge badge-ready">جاهز</span>`;
       else if (o.status === 'done')     badge = `<span class="badge badge-done">✓ تم التحصيل</span>`;
       else if (o.status === 'skipped') {
-        if      (o.skipReason === 'مدفوع بالكامل')  badge = `<span class="badge badge-paid-full">مدفوع بالكامل</span>`;
-        else if (o.skipReason === 'مستحق استرداد')  badge = `<span class="badge badge-refund">يستحق الاسترداد</span>`;
+        if      (o.skipReason === 'مدفوع بالكامل') badge = `<span class="badge badge-paid-full">مدفوع بالكامل</span>`;
+        else if (o.skipReason === 'مستحق استرداد') badge = `<span class="badge badge-refund">يستحق الاسترداد</span>`;
         else badge = `<span class="badge badge-skipped">${o.skipReason || 'مُتخطى'}</span>`;
       }
       else if (o.status === 'notfound') badge = `<span class="badge badge-notfound">غير موجود</span>`;
       else                              badge = `<span class="badge badge-error" title="${o.error||''}">خطأ</span>`;
 
-      const finLabel = o.financialStatus ? financialLabel(o.financialStatus) : '—';
-      const isNew    = i === 0 ? 'row-new' : '';
+      const finLabel   = financialLabel(o.financialStatus);
+      const hasDetails = (o.lineItems && o.lineItems.length > 0) || o.shipping;
+      const expandIcon = hasDetails ? `<span class="expand-icon">▶</span>` : '';
 
-      return `<tr class="${isNew}">
-        <td class="order-num-cell">${nameDisplay}</td>
+      // Main row
+      rows.push(`<tr class="order-row${i===0?' row-new':''}" data-idx="${i}" onclick="if(${hasDetails}) toggleRow(${i})">
+        <td class="order-num-cell">${expandIcon}${nameDisplay}</td>
         <td class="amount-cell">${amountCell}</td>
         <td class="financial-cell">${finLabel}</td>
         <td class="status-cell">${badge}</td>
-      </tr>`;
-    }).join('');
+      </tr>`);
+
+      // Detail row
+      let detailContent = '';
+      if (hasDetails) {
+        if (o.lineItems && o.lineItems.length > 0) {
+          const skuTags = o.lineItems.map(li =>
+            `<span class="sku-tag">${li.sku}<span class="sku-qty">×${li.quantity}</span></span>`
+          ).join('');
+          detailContent += `
+            <div class="detail-section">
+              <div class="detail-label">SKUs</div>
+              <div class="sku-list">${skuTags}</div>
+            </div>`;
+        }
+        if (o.shipping) {
+          detailContent += `
+            <div class="detail-section">
+              <div class="detail-label">الشحن</div>
+              <div class="shipping-info">
+                <span class="shipping-title">${o.shipping.title}</span>
+                <span class="shipping-amount">${fmt(o.shipping.amount)} EGP</span>
+              </div>
+            </div>`;
+        }
+      }
+
+      rows.push(`<tr class="detail-row" data-idx="${i}">
+        <td colspan="4">${hasDetails ? `<div class="detail-box">${detailContent}</div>` : ''}</td>
+      </tr>`);
+    });
+
+    tbody.innerHTML = rows.join('');
   }
 
   function showTable() {
-    document.getElementById('tableWrap').classList.add('visible');
-    document.getElementById('statsBar').classList.add('visible');
+    $('tableWrap').classList.add('visible');
+    $('statsBar').classList.add('visible');
   }
 
   function updateStats() {
-    const total = orders.length;
     const ready = orders.filter(o => o.status === 'ready');
     const done  = orders.filter(o => o.status === 'done');
     const sum   = [...ready, ...done].reduce((s, o) => s + (o.amount || 0), 0);
-
-    document.getElementById('statCount').textContent = total;
-    document.getElementById('statTotal').textContent = sum > 0 ? fmt(sum) : '—';
-    document.getElementById('statDone').textContent  = done.length;
-    document.getElementById('clearBtn').disabled     = total === 0;
+    $('statCount').textContent = orders.length;
+    $('statTotal').textContent = sum > 0 ? fmt(sum) : '—';
+    $('statDone').textContent  = done.length;
+    $('clearBtn').disabled     = orders.length === 0;
   }
 
   function updatePayBtn() {
-    const ready = orders.filter(o => o.status === 'ready').length;
-    document.getElementById('payBtn').disabled = ready === 0 || isProcessing;
+    $('payBtn').disabled = orders.filter(o => o.status === 'ready').length === 0 || isProcessing;
   }
 
   function setProgress(pct) {
-    const wrap = document.getElementById('progressWrap');
-    const bar  = document.getElementById('progressBar');
-    wrap.classList.add('visible');
-    bar.style.width = pct + '%';
-    if (pct >= 100) setTimeout(() => wrap.classList.remove('visible'), 800);
+    $('progressWrap').classList.add('visible');
+    $('progressBar').style.width = pct + '%';
+    if (pct >= 100) setTimeout(() => $('progressWrap').classList.remove('visible'), 800);
   }
 
   function showResult(success, title, detail) {
-    const box = document.getElementById('resultBox');
-    box.className = `result-box ${success ? 'success' : 'error'}`;
-    document.getElementById('resultTitle').textContent  = title;
-    document.getElementById('resultDetail').textContent = detail;
+    $('resultBox').className = `result-box ${success ? 'success' : 'error'}`;
+    $('resultTitle').textContent  = title;
+    $('resultDetail').textContent = detail;
   }
 
-  function hideResult() {
-    document.getElementById('resultBox').className = 'result-box';
-  }
+  function hideResult() { $('resultBox').className = 'result-box'; }
+  function toggleSettings() { $('settings').classList.toggle('active'); }
 
-  function toggleSettings() {
-    document.getElementById('settings').classList.toggle('active');
+  function showToast(msg, type = 'scan') {
+    const t = $('toast');
+    t.textContent = msg;
+    t.style.background = type === 'warning' ? 'var(--gold)' : 'var(--scanner)';
+    t.style.color = '#000';
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 1200);
   }
 
   // ═══════════════════════════════════════════════════════════════
-  // LOG FUNCTIONS — localStorage + KV sync
+  // LOG FUNCTIONS
   // ═══════════════════════════════════════════════════════════════
 
   function getLogConfig() {
-    return {
-      url:    document.getElementById('logWorkerUrl').value.trim(),
-      secret: document.getElementById('logWorkerSecret').value.trim(),
-    };
+    return { url: $('logWorkerUrl').value.trim(), secret: $('logWorkerSecret').value.trim() };
   }
-
-  function hasLogWorker() {
-    const { url, secret } = getLogConfig();
-    return url && secret;
-  }
+  function hasLogWorker() { const { url, secret } = getLogConfig(); return url && secret; }
 
   function updateSyncStatus(status) {
-    const el = document.getElementById('logSyncStatus');
+    const el = $('logSyncStatus');
     el.className = `log-sync-status ${status}`;
-    if      (status === 'synced')  el.textContent = '☁️ متزامن';
-    else if (status === 'local')   el.textContent = '💾 محلي';
-    else if (status === 'loading') el.textContent = '⏳ جاري...';
+    el.textContent = status === 'synced' ? '☁️ متزامن' : status === 'loading' ? '⏳ جاري...' : '💾 محلي';
   }
 
   function getLog() {
@@ -903,77 +870,56 @@
         });
         if (res.ok) {
           const data = await res.json();
-          if (data.entry && data.entry.orders) {
-            const localLog = getLog();
-            if (localLog.length > 0 && localLog[0].date === entry.date) {
-              localLog[0] = data.entry;
-              localStorage.setItem('cod_payment_log', JSON.stringify(localLog));
-              renderLog(localLog);
-            }
+          if (data.entry) {
+            const l = getLog();
+            if (l.length > 0 && l[0].date === entry.date) { l[0] = data.entry; localStorage.setItem('cod_payment_log', JSON.stringify(l)); renderLog(l); }
           }
           updateSyncStatus('synced');
-        } else {
-          updateSyncStatus('local');
-        }
-      } catch {
-        updateSyncStatus('local');
-      }
+        } else { updateSyncStatus('local'); }
+      } catch { updateSyncStatus('local'); }
     }
   }
 
   async function syncFromCloud() {
-    if (!hasLogWorker()) {
-      alert('أدخل Log Worker URL و Secret في الإعدادات');
-      document.getElementById('settings').classList.add('active');
-      return;
-    }
+    if (!hasLogWorker()) { alert('أدخل Log Worker URL و Secret في الإعدادات'); $('settings').classList.add('active'); return; }
     try {
       updateSyncStatus('loading');
       const { url, secret } = getLogConfig();
-      const res = await fetch(`${url}/log`, {
-        method: 'GET',
-        headers: { 'Authorization': `Bearer ${secret}` },
-      });
+      const res = await fetch(`${url}/log`, { method: 'GET', headers: { 'Authorization': `Bearer ${secret}` } });
       if (!res.ok) throw new Error('فشل الاتصال');
       const data = await res.json();
       const merged = mergeAndDedupe(getLog(), data.log || []);
       localStorage.setItem('cod_payment_log', JSON.stringify(merged));
       renderLog(merged);
       updateSyncStatus('synced');
-    } catch (err) {
-      updateSyncStatus('local');
-      alert('فشل جلب السجل: ' + err.message);
-    }
+    } catch (err) { updateSyncStatus('local'); alert('فشل جلب السجل: ' + err.message); }
   }
 
-  function mergeAndDedupe(localLog, cloudLog) {
-    const seen = new Set(); const merged = [];
-    for (const entry of [...localLog, ...cloudLog]) {
-      if (!seen.has(entry.date)) { seen.add(entry.date); merged.push(entry); }
-    }
-    merged.sort((a, b) => new Date(b.date) - new Date(a.date));
+  function mergeAndDedupe(a, b) {
+    const seen = new Set(), merged = [];
+    for (const e of [...a, ...b]) { if (!seen.has(e.date)) { seen.add(e.date); merged.push(e); } }
+    merged.sort((x, y) => new Date(y.date) - new Date(x.date));
     return merged;
   }
 
   function toggleLogEntry(el) { el.closest('.log-entry').classList.toggle('open'); }
+  function toggleLogDetailItem(el) { el.closest('.log-detail-item').classList.toggle('open'); }
 
   function formatLogDate(iso) {
     const d = new Date(iso);
-    return `${d.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' })} — ${d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: true })}`;
+    return `${d.toLocaleDateString('en-GB', { day:'2-digit', month:'2-digit', year:'numeric' })} — ${d.toLocaleTimeString('en-GB', { hour:'2-digit', minute:'2-digit', hour12: true })}`;
   }
 
   function onLogCheckChange() {
-    const anyChecked = document.querySelectorAll('.log-check:checked').length > 0;
-    document.getElementById('exportSelectedBtn').classList.toggle('visible', anyChecked);
+    const any = document.querySelectorAll('.log-check:checked').length > 0;
+    $('exportSelectedBtn').classList.toggle('visible', any);
   }
 
   function renderLog(log) {
     if (!log) log = getLog();
-    const container = document.getElementById('logList');
-    if (log.length === 0) {
-      container.innerHTML = '<div class="log-empty">لا توجد عمليات مسجلة</div>';
-      return;
-    }
+    const container = $('logList');
+    if (log.length === 0) { container.innerHTML = '<div class="log-empty">لا توجد عمليات مسجلة</div>'; return; }
+
     container.innerHTML = log.map((entry, i) => `
       <div class="log-entry">
         <div class="log-entry-header">
@@ -983,7 +929,7 @@
             <div class="log-entry-summary">
               <span class="log-tag tag-payment">💵 تحصيل COD</span>
               <span class="log-tag tag-count">${entry.totalOrders} أوردر</span>
-              ${entry.totalAmount ? `<span class="log-tag tag-payment">${parseFloat(entry.totalAmount).toLocaleString('en-EG', {minimumFractionDigits:2})} EGP</span>` : ''}
+              ${entry.totalAmount ? `<span class="log-tag tag-payment">${parseFloat(entry.totalAmount).toLocaleString('en-US',{minimumFractionDigits:2})} EGP</span>` : ''}
             </div>
           </div>
           <div class="log-entry-stats">
@@ -993,73 +939,92 @@
           <span class="log-toggle" onclick="toggleLogEntry(this)">▶</span>
         </div>
         <div class="log-entry-details">
-          ${entry.orders.map(o => `
-            <div class="log-detail-item">
-              <span class="log-detail-order">${o.orderName || ''} <span style="color:var(--text-dim);font-size:0.7rem">${o.order}</span></span>
-              <span class="log-detail-amount">${o.amount ? o.amount + ' EGP' : ''}</span>
-              <span class="log-detail-status log-detail-${o.status}">${o.status === 'success' ? '✓ ناجح' : '✗ فشل'}</span>
-            </div>
-          `).join('')}
+          ${entry.orders.map(o => {
+            const hasSkus     = o.lineItems && o.lineItems.length > 0;
+            const hasShipping = o.shipping && parseFloat(o.shipping.amount) > 0;
+            const hasSub      = hasSkus || hasShipping;
+            const skuHtml = hasSkus
+              ? `<div class="log-sub-label">SKUs</div>
+                 <div class="log-sku-list">${o.lineItems.map(li => `<span class="log-sku-tag">${li.sku} ×${li.quantity}</span>`).join('')}</div>`
+              : '';
+            const shippingHtml = hasShipping
+              ? `<div class="log-sub-label">الشحن</div>
+                 <div class="log-shipping-val">${o.shipping.title} — ${fmt(o.shipping.amount)} EGP</div>`
+              : '';
+            return `
+              <div class="log-detail-item">
+                <div class="log-detail-main" onclick="${hasSub ? 'toggleLogDetailItem(this)' : ''}">
+                  <span class="log-detail-order">${o.orderName || ''} <span style="color:var(--text-dim);font-size:0.7rem">${o.order}</span></span>
+                  <span class="log-detail-amount">${o.amount ? o.amount + ' EGP' : ''}</span>
+                  <span class="log-detail-status log-detail-${o.status}">${o.status === 'success' ? '✓ ناجح' : '✗ فشل'}</span>
+                  ${hasSub ? '<span style="color:var(--text-dim);font-size:0.7rem;margin-right:0.3rem">▶</span>' : ''}
+                </div>
+                ${hasSub ? `<div class="log-detail-sub">${skuHtml}${shippingHtml}</div>` : ''}
+              </div>`;
+          }).join('')}
         </div>
       </div>
     `).join('');
-    document.getElementById('exportSelectedBtn').classList.remove('visible');
+    $('exportSelectedBtn').classList.remove('visible');
   }
 
+  // ── CSV Export ────────────────────────────────────────────────────
   function exportLogCSV(selectedOnly) {
     const fullLog = getLog();
     if (fullLog.length === 0) { alert('السجل فارغ'); return; }
 
     let log;
     if (selectedOnly) {
-      const checkedIndexes = [...document.querySelectorAll('.log-check:checked')].map(cb => parseInt(cb.dataset.logIndex));
-      if (checkedIndexes.length === 0) { alert('اختر عمليات أولاً'); return; }
-      log = checkedIndexes.map(i => fullLog[i]).filter(Boolean);
+      const idx = [...document.querySelectorAll('.log-check:checked')].map(cb => parseInt(cb.dataset.logIndex));
+      if (!idx.length) { alert('اختر عمليات أولاً'); return; }
+      log = idx.map(i => fullLog[i]).filter(Boolean);
     } else {
       log = fullLog;
     }
 
     const BOM = '\uFEFF';
-    const headers = ['التاريخ', 'الوقت', 'رقم الأوردر', 'Order ID', 'المبلغ EGP', 'النتيجة', 'الخطأ'];
+    const headers = ['التاريخ', 'الوقت', 'رقم الأوردر', 'Order ID', 'المبلغ EGP', 'مصاريف الشحن EGP', 'عنوان الشحن', 'SKUs', 'النتيجة', 'الخطأ'];
     const rows = [headers.join(',')];
+
     for (const entry of log) {
       const d    = new Date(entry.date);
       const date = d.toLocaleDateString('en-GB');
-      const time = d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
+      const time = d.toLocaleTimeString('en-GB', { hour:'2-digit', minute:'2-digit', second:'2-digit', hour12: false });
+
       for (const o of entry.orders) {
+        const skusStr     = (o.lineItems && o.lineItems.length > 0)
+          ? o.lineItems.map(li => `${li.sku}x${li.quantity}`).join(' | ')
+          : '';
+        const shippingAmt = o.shipping ? o.shipping.amount : '';
+        const shippingTtl = o.shipping ? o.shipping.title  : '';
+
         rows.push([
           date,
           time,
           o.orderName || '—',
           `="${o.order}"`,
-          o.amount || '0.00',
+          o.amount    || '0.00',
+          shippingAmt,
+          shippingTtl ? `"${shippingTtl}"` : '',
+          skusStr     ? `"${skusStr}"` : '',
           o.status === 'success' ? 'ناجح' : 'فشل',
-          o.error ? `"${o.error}"` : '',
+          o.error     ? `"${o.error}"` : '',
         ].join(','));
       }
     }
+
     const blob = new Blob([BOM + rows.join('\n')], { type: 'text/csv;charset=utf-8;' });
     const url  = URL.createObjectURL(blob);
     const a    = document.createElement('a');
     a.href = url;
-    a.download = `cod-payment-log-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.download = `cod-payment-log-${new Date().toISOString().slice(0,10)}.csv`;
     a.click();
     URL.revokeObjectURL(url);
   }
 
-  // Init log on load
+  // Init
   renderLog();
   if (hasLogWorker()) syncFromCloud();
-
-  function showToast(msg, type = 'scan') {
-    const toast = document.getElementById('toast');
-    toast.textContent = msg;
-    toast.style.background = type === 'warning' ? 'var(--gold)' : 'var(--scanner)';
-    toast.style.color = '#000';
-    toast.classList.add('show');
-    setTimeout(() => toast.classList.remove('show'), 1200);
-  }
-
 </script>
 </body>
 </html>
