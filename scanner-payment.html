@@ -1,776 +1,782 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Scanner Payment — COD</title>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
-<style>
-  :root {
-    --bg: #0c0c0d;
-    --bg-card: #161618;
-    --bg-input: #1e1e21;
-    --border: #2a2a2e;
-    --text: #f5f5f5;
-    --text-dim: #8b8b8f;
-    --accent: #f43f5e;
-    --success: #22c55e;
-    --success-glow: rgba(34,197,94,0.12);
-    --error: #ef4444;
-    --error-glow: rgba(239,68,68,0.12);
-    --gold: #f59e0b;
-    --gold-glow: rgba(245,158,11,0.12);
-    --blue: #3b82f6;
-    --neutral: #a0a0a8;
-    --scanner: #00d4ff;
-    --scanner-glow: rgba(0,212,255,0.12);
-  }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Order Status Updater</title>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0c0c0d;
+            --bg-card: #161618;
+            --bg-input: #1e1e21;
+            --border: #2a2a2e;
+            --text: #f5f5f5;
+            --text-dim: #8b8b8f;
+            --accent: #f43f5e;
+            --accent-glow: rgba(244, 63, 94, 0.15);
+            --success: #22c55e;
+            --success-glow: rgba(34, 197, 94, 0.15);
+            --error: #ef4444;
+            --error-glow: rgba(239, 68, 68, 0.15);
+            --scanner: #00d4ff;
+            --orange: #f59e0b;
+            --orange-glow: rgba(245, 158, 11, 0.15);
+            --blue: #3b82f6;
+            --blue-glow: rgba(59, 130, 246, 0.15);
+            --purple: #8b5cf6;
+            --purple-glow: rgba(139, 92, 246, 0.15);
+            --pink: #ec4899;
+            --pink-glow: rgba(236, 72, 153, 0.15);
+        }
 
-  * { margin: 0; padding: 0; box-sizing: border-box; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
 
-  body {
-    font-family: 'IBM Plex Sans Arabic', sans-serif;
-    background: var(--bg);
-    color: var(--text);
-    min-height: 100vh;
-    padding: 1rem;
-  }
+        body {
+            font-family: 'IBM Plex Sans Arabic', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            padding: 1rem;
+        }
 
-  .container { max-width: 620px; margin: 0 auto; }
+        .container { max-width: 500px; margin: 0 auto; }
 
-  .header { text-align: center; margin-bottom: 1.5rem; padding-top: 0.5rem; }
-  .header h1 { font-size: 1.4rem; font-weight: 700; margin-bottom: 0.3rem; }
-  .header p { color: #ffffff; font-size: 0.85rem; }
+        .header { text-align: center; margin-bottom: 1.5rem; }
+        .header h1 { font-size: 1.4rem; font-weight: 700; margin-bottom: 0.3rem; }
+        .header p { color: var(--text-dim); font-size: 0.85rem; }
 
-  .card {
-    background: var(--bg-card);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 1rem;
-    margin-bottom: 1rem;
-  }
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
 
-  .card-title {
-    font-size: 0.9rem;
-    font-weight: 600;
-    color: var(--text-dim);
-    margin-bottom: 0.75rem;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-  }
+        .card-title {
+            font-size: 0.95rem;
+            font-weight: 600;
+            margin-bottom: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
 
-  /* Scanner input area */
-  .scanner-area {
-    position: relative;
-  }
+        .status-selector {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
 
-  .scanner-input {
-    width: 100%;
-    background: var(--bg-input);
-    border: 2px solid var(--scanner);
-    border-radius: 10px;
-    padding: 1rem 1rem 1rem 3rem;
-    color: var(--text);
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 1rem;
-    outline: none;
-    direction: ltr;
-    transition: border-color 0.2s, box-shadow 0.2s;
-    box-shadow: 0 0 0 0 rgba(0,212,255,0);
-  }
+        .status-btn {
+            padding: 0.6rem 0.3rem;
+            border-radius: 10px;
+            font-family: inherit;
+            font-size: 0.7rem;
+            font-weight: 600;
+            cursor: pointer;
+            border: 2px solid var(--border);
+            background: var(--bg-input);
+            color: var(--text-dim);
+            transition: all 0.2s;
+            text-align: center;
+        }
 
-  .scanner-input:focus {
-    border-color: var(--scanner);
-    box-shadow: 0 0 12px rgba(0,212,255,0.15);
-  }
+        .status-btn:hover { border-color: var(--text-dim); }
+        .status-btn.active { transform: scale(1.02); }
+        .status-btn .icon { font-size: 1.1rem; display: block; margin-bottom: 0.2rem; }
 
-  .scanner-input::placeholder { color: var(--text-dim); font-size: 0.85rem; }
+        .status-btn.Shipped.active { border-color: var(--scanner); background: rgba(0, 212, 255, 0.15); color: var(--scanner); }
+        .status-btn.Delivered.active { border-color: var(--success); background: var(--success-glow); color: var(--success); }
+        .status-btn.Returned.active { border-color: var(--orange); background: var(--orange-glow); color: var(--orange); }
+        .status-btn.Cancelled.active { border-color: var(--error); background: var(--error-glow); color: var(--error); }
+        .status-btn.Ready.active { border-color: var(--purple); background: var(--purple-glow); color: var(--purple); }
 
-  .scanner-icon {
-    position: absolute;
-    left: 0.85rem;
-    top: 50%;
-    transform: translateY(-50%);
-    font-size: 1.1rem;
-    pointer-events: none;
-  }
+        .courier-selector {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.5rem;
+        }
 
-  .scanner-hint {
-    font-size: 0.75rem;
-    color: var(--scanner);
-    margin-top: 0.4rem;
-    text-align: left;
-    direction: ltr;
-    opacity: 0.7;
-  }
+        .courier-btn {
+            padding: 0.7rem 0.5rem;
+            border-radius: 8px;
+            font-family: inherit;
+            font-size: 0.85rem;
+            font-weight: 500;
+            cursor: pointer;
+            border: 2px solid var(--border);
+            background: var(--bg-input);
+            color: var(--text-dim);
+            transition: all 0.2s;
+            text-align: center;
+        }
 
-  /* Stats bar */
-  .stats-bar {
-    display: flex;
-    gap: 0.5rem;
-    margin-bottom: 1rem;
-    display: none;
-  }
-  .stats-bar.visible { display: flex; }
+        .courier-btn:hover { border-color: var(--text-dim); }
+        .courier-btn.active { border-color: var(--pink); background: var(--pink-glow); color: var(--pink); }
 
-  .stat-chip {
-    flex: 1;
-    background: var(--bg-card);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 0.65rem 0.75rem;
-    text-align: center;
-  }
-  .stat-chip .stat-val {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 1.1rem;
-    font-weight: 700;
-    display: block;
-  }
-  .stat-chip .stat-lbl {
-    font-size: 0.72rem;
-    color: var(--text-dim);
-    display: block;
-    margin-top: 0.1rem;
-  }
-  .stat-chip.gold .stat-val  { color: var(--gold); }
-  .stat-chip.blue .stat-val  { color: var(--blue); }
-  .stat-chip.green .stat-val { color: var(--success); }
+        #reader { width: 100%; border-radius: 10px; overflow: hidden; }
 
-  /* Buttons row */
-  .btn-row {
-    display: flex;
-    gap: 0.6rem;
-    margin-bottom: 1rem;
-  }
+        .scan-status {
+            text-align: center;
+            padding: 0.6rem;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            margin-top: 0.75rem;
+            background: var(--bg-input);
+            color: var(--text-dim);
+        }
 
-  .btn {
-    flex: 1;
-    padding: 0.85rem;
-    border-radius: 10px;
-    font-family: inherit;
-    font-size: 0.9rem;
-    font-weight: 700;
-    cursor: pointer;
-    border: none;
-    transition: all 0.2s;
-  }
+        .scan-status.success { background: var(--success-glow); color: var(--success); animation: pulse 0.5s; }
 
-  .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+        @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.02); } }
 
-  .btn-clear {
-    background: var(--bg-card);
-    border: 1px solid var(--border);
-    color: var(--text-dim);
-    flex: 0 0 auto;
-    padding: 0.85rem 1.1rem;
-  }
-  .btn-clear:hover:not(:disabled) { border-color: var(--error); color: var(--error); }
+        .scanner-btn {
+            width: 100%;
+            padding: 0.85rem;
+            border-radius: 10px;
+            font-family: inherit;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            border: 2px solid var(--scanner);
+            background: rgba(0, 212, 255, 0.1);
+            color: var(--scanner);
+            margin-top: 0.75rem;
+            transition: all 0.2s;
+        }
 
-  .btn-pay {
-    background: var(--gold);
-    color: #000;
-  }
-  .btn-pay:hover:not(:disabled) { filter: brightness(1.1); }
+        .scanner-btn.stop { background: var(--error); border-color: var(--error); color: white; }
 
-  /* Orders table */
-  .orders-table-wrap {
-    display: none;
-    margin-bottom: 1rem;
-    border-radius: 12px;
-    overflow: hidden;
-    border: 1px solid var(--border);
-  }
-  .orders-table-wrap.visible { display: block; }
+        .counter-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem; }
+        .counter-text { font-size: 0.85rem; color: var(--text-dim); }
+        .counter-text strong { color: var(--accent); font-size: 1rem; }
 
-  table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 0.85rem;
-  }
+        .clear-btn { background: none; border: 1px solid var(--border); color: var(--text-dim); padding: 0.4rem 0.8rem; border-radius: 6px; font-family: inherit; font-size: 0.8rem; cursor: pointer; }
+        .clear-btn:hover { border-color: var(--error); color: var(--error); }
 
-  thead { background: var(--bg-input); }
+        .scanned-list { max-height: 150px; overflow-y: auto; border: 1px solid var(--border); border-radius: 8px; }
 
-  thead th {
-    padding: 0.65rem 0.85rem;
-    text-align: right;
-    font-size: 0.75rem;
-    font-weight: 600;
-    color: var(--text-dim);
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-    border-bottom: 1px solid var(--border);
-  }
-  thead th.col-status { text-align: center; }
-  thead th.col-amount { text-align: left; direction: ltr; }
+        .scanned-item { display: flex; align-items: center; justify-content: space-between; padding: 0.65rem 0.85rem; border-bottom: 1px solid var(--border); font-family: 'JetBrains Mono', monospace; font-size: 0.9rem; }
+        .scanned-item:last-child { border-bottom: none; }
+        .scanned-item.new { animation: highlight 1s ease; }
 
-  tbody tr {
-    border-bottom: 1px solid var(--border);
-    transition: background 0.15s;
-  }
-  tbody tr:last-child { border-bottom: none; }
-  tbody tr.row-new { animation: rowHighlight 1s ease; }
+        @keyframes highlight { 0% { background: var(--success-glow); } 100% { background: transparent; } }
 
-  @keyframes rowHighlight {
-    0%   { background: rgba(0,212,255,0.08); }
-    100% { background: transparent; }
-  }
+        .remove-btn { background: none; border: none; color: var(--text-dim); cursor: pointer; padding: 0.3rem; font-size: 1rem; }
+        .remove-btn:hover { color: var(--error); }
 
-  tbody td { padding: 0.65rem 0.85rem; vertical-align: middle; }
+        .empty-list { padding: 1.5rem; text-align: center; color: var(--text-dim); font-size: 0.85rem; }
 
-  .order-num-cell {
-    font-family: 'JetBrains Mono', monospace;
-    font-weight: 600;
-    color: var(--neutral);
-    font-size: 0.88rem;
-  }
+        .settings-toggle { width: 100%; background: none; border: 1px solid var(--border); color: var(--text-dim); padding: 0.6rem; border-radius: 8px; font-family: inherit; font-size: 0.85rem; cursor: pointer; margin-bottom: 0.75rem; }
 
-  .amount-cell {
-    font-family: 'JetBrains Mono', monospace;
-    font-weight: 700;
-    font-size: 0.9rem;
-    text-align: left;
-    direction: ltr;
-  }
+        .settings-content { display: none; margin-bottom: 1rem; }
+        .settings-content.active { display: block; }
 
-  .status-cell    { text-align: center; }
-  .financial-cell {
-    font-size: 0.78rem;
-    color: var(--text-dim);
-    font-family: 'JetBrains Mono', monospace;
-    text-align: center;
-  }
+        .input-group { margin-bottom: 0.75rem; }
+        .input-group label { display: block; font-size: 0.8rem; color: var(--text-dim); margin-bottom: 0.3rem; }
+        .input-group input { width: 100%; background: var(--bg-input); border: 1px solid var(--border); border-radius: 8px; padding: 0.7rem; color: var(--text); font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; }
+        .input-group input:focus { outline: none; border-color: var(--accent); }
 
-  /* Badges */
-  .badge {
-    display: inline-block;
-    padding: 0.2rem 0.55rem;
-    border-radius: 6px;
-    font-size: 0.72rem;
-    font-weight: 600;
-    white-space: nowrap;
-  }
+        .btn-primary { width: 100%; padding: 1rem; border-radius: 10px; font-family: inherit; font-size: 0.95rem; font-weight: 600; cursor: pointer; border: none; background: var(--accent); color: white; margin-bottom: 0.75rem; transition: all 0.2s; }
+        .btn-primary:hover { filter: brightness(1.1); }
+        .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+        .btn-primary.Shipped { background: var(--scanner); }
+        .btn-primary.Delivered { background: var(--success); }
+        .btn-primary.Returned { background: var(--orange); }
+        .btn-primary.Cancelled { background: var(--error); }
+        .btn-primary.Ready { background: var(--purple); }
 
-  .badge-scanning  { background: rgba(0,212,255,0.15); color: var(--scanner); border: 1px solid rgba(0,212,255,0.3); }
-  .badge-loading   { background: rgba(59,130,246,0.15); color: var(--blue); border: 1px solid rgba(59,130,246,0.3); }
-  .badge-ready     { background: rgba(245,158,11,0.12); color: var(--gold); border: 1px solid rgba(245,158,11,0.25); }
-  .badge-done      { background: var(--success-glow); color: var(--success); border: 1px solid rgba(34,197,94,0.3); }
-  .badge-paid-full { background: var(--success-glow); color: var(--success); border: 1px solid rgba(34,197,94,0.3); }
-  .badge-refund    { background: var(--error-glow); color: var(--error); border: 1px solid rgba(239,68,68,0.3); }
-  .badge-error     { background: var(--error-glow); color: var(--error); border: 1px solid rgba(239,68,68,0.3); }
-  .badge-notfound  { background: rgba(139,139,143,0.12); color: var(--text-dim); border: 1px solid rgba(139,139,143,0.25); }
-  .badge-skipped   { background: rgba(139,139,143,0.12); color: var(--text-dim); border: 1px solid rgba(139,139,143,0.25); }
+        .results { display: none; }
+        .results.active { display: block; }
+        .results-header { display: flex; justify-content: space-between; margin-bottom: 0.5rem; font-size: 0.9rem; }
+        .stat-success { color: var(--success); }
+        .stat-error { color: var(--error); }
 
-  /* Result box */
-  .result-box {
-    border-radius: 10px;
-    padding: 0.9rem 1rem;
-    margin-bottom: 0.75rem;
-    display: none;
-    font-size: 0.9rem;
-  }
-  .result-box.success { display: block; background: var(--success-glow); border: 1px solid rgba(34,197,94,0.3); color: var(--success); }
-  .result-box.error   { display: block; background: var(--error-glow); border: 1px solid rgba(239,68,68,0.3); color: var(--error); }
-  .result-box .result-title  { font-weight: 700; font-size: 0.95rem; margin-bottom: 0.2rem; }
-  .result-box .result-detail { font-size: 0.8rem; opacity: 0.8; font-family: 'JetBrains Mono', monospace; }
+        .results-list { max-height: 200px; overflow-y: auto; border: 1px solid var(--border); border-radius: 8px; }
+        .result-item { display: flex; justify-content: space-between; padding: 0.6rem 0.85rem; border-bottom: 1px solid var(--border); font-size: 0.85rem; }
+        .result-item:last-child { border-bottom: none; }
+        .result-status { padding: 0.2rem 0.6rem; border-radius: 10px; font-size: 0.75rem; }
+        .result-pending { background: rgba(59,130,246,0.15); color: #3b82f6; }
+        .result-success { background: var(--success-glow); color: var(--success); }
+        .result-error { background: var(--error-glow); color: var(--error); }
 
-  /* Toast */
-  .toast {
-    position: fixed;
-    top: 1rem;
-    left: 50%;
-    transform: translateX(-50%);
-    background: var(--scanner);
-    color: #000;
-    padding: 0.5rem 1.2rem;
-    border-radius: 20px;
-    font-size: 0.82rem;
-    font-weight: 700;
-    opacity: 0;
-    transition: opacity 0.25s;
-    z-index: 100;
-    pointer-events: none;
-    font-family: 'JetBrains Mono', monospace;
-  }
-  .toast.show { opacity: 1; }
+        .progress-bar { height: 4px; background: var(--border); border-radius: 2px; margin-bottom: 0.75rem; display: none; }
+        .progress-bar.active { display: block; }
+        .progress-fill { height: 100%; background: var(--accent); border-radius: 2px; transition: width 0.3s; width: 0%; }
 
-  /* Progress */
-  .progress-bar-wrap {
-    height: 3px;
-    background: var(--border);
-    border-radius: 2px;
-    margin-bottom: 1rem;
-    display: none;
-    overflow: hidden;
-  }
-  .progress-bar-wrap.visible { display: block; }
-  .progress-bar {
-    height: 100%;
-    background: var(--gold);
-    border-radius: 2px;
-    transition: width 0.3s ease;
-    width: 0%;
-  }
+        .manual-input { display: flex; gap: 0.5rem; margin-top: 0.75rem; }
+        .manual-input input { flex: 1; background: var(--bg-input); border: 1px solid var(--border); border-radius: 8px; padding: 0.7rem; color: var(--text); font-family: 'JetBrains Mono', monospace; font-size: 0.9rem; }
+        .manual-input button { background: var(--success); border: none; border-radius: 8px; padding: 0 1rem; color: white; font-size: 1.2rem; cursor: pointer; }
 
-  /* Settings */
-  .settings-toggle {
-    width: 100%;
-    background: none;
-    border: 1px solid var(--border);
-    color: var(--text-dim);
-    padding: 0.6rem;
-    border-radius: 8px;
-    font-family: inherit;
-    font-size: 0.85rem;
-    cursor: pointer;
-    margin-bottom: 0.75rem;
-    transition: border-color 0.2s;
-  }
-  .settings-toggle:hover { border-color: var(--text-dim); }
+        .spinner { width: 14px; height: 14px; border: 2px solid transparent; border-top-color: currentColor; border-radius: 50%; animation: spin 0.8s linear infinite; display: inline-block; }
+        @keyframes spin { to { transform: rotate(360deg); } }
 
-  .settings-content { display: none; margin-bottom: 0.75rem; }
-  .settings-content.active { display: block; }
+        .toast { position: fixed; top: 1rem; left: 50%; transform: translateX(-50%); background: var(--success); color: white; padding: 0.6rem 1.2rem; border-radius: 20px; font-size: 0.85rem; font-weight: 600; opacity: 0; transition: opacity 0.3s; z-index: 100; }
+        .toast.show { opacity: 1; }
 
-  .input-group { margin-bottom: 0.75rem; }
-  .input-group:last-child { margin-bottom: 0; }
-  .input-group label { display: block; font-size: 0.8rem; color: var(--text-dim); margin-bottom: 0.35rem; }
-  .input-group input {
-    width: 100%;
-    background: var(--bg-input);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 0.75rem 1rem;
-    color: var(--text);
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.85rem;
-    outline: none;
-    transition: border-color 0.2s;
-    direction: ltr;
-  }
-  .input-group input:focus { border-color: var(--accent); }
+        .summary-box { background: var(--bg-input); border: 1px solid var(--border); border-radius: 10px; padding: 0.75rem; margin-bottom: 0.75rem; }
+        .summary-row { display: flex; justify-content: space-between; padding: 0.3rem 0; font-size: 0.85rem; }
+        .summary-label { color: var(--text-dim); }
+        .summary-value { font-weight: 600; }
+        .summary-value.status { color: var(--scanner); }
+        .summary-value.courier { color: var(--pink); }
+        .summary-value.count { color: var(--accent); }
 
-  .spinner {
-    width: 14px; height: 14px;
-    border: 2px solid transparent;
-    border-top-color: currentColor;
-    border-radius: 50%;
-    animation: spin 0.8s linear infinite;
-    display: inline-block;
-    vertical-align: middle;
-    margin-right: 0.3rem;
-  }
-  @keyframes spin { to { transform: rotate(360deg); } }
-</style>
+        /* Log Section */
+        .log-section { margin-top: 1rem; }
+        .log-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; }
+        .log-header h2 { font-size: 0.95rem; font-weight: 600; display: flex; align-items: center; gap: 0.5rem; }
+        .log-actions { display: flex; gap: 0.5rem; }
+        .log-btn { background: none; border: 1px solid var(--border); color: var(--text-dim); padding: 0.35rem 0.7rem; border-radius: 6px; font-family: inherit; font-size: 0.75rem; cursor: pointer; transition: all 0.2s; }
+        .log-btn:hover { border-color: var(--text-dim); color: var(--text); }
+        .log-btn.export:hover { border-color: var(--success); color: var(--success); }
+        .log-empty { text-align: center; padding: 1.5rem; color: var(--text-dim); font-size: 0.85rem; border: 1px solid var(--border); border-radius: 8px; }
+        .log-entry { background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; margin-bottom: 0.5rem; overflow: hidden; transition: border-color 0.2s; }
+        .log-entry:hover { border-color: var(--text-dim); }
+        .log-entry-header { display: flex; justify-content: space-between; align-items: center; padding: 0.7rem 0.85rem; cursor: pointer; gap: 0.5rem; }
+        .log-entry-info { flex: 1; min-width: 0; }
+        .log-entry-date { font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: var(--text-dim); margin-bottom: 0.25rem; }
+        .log-entry-summary { font-size: 0.8rem; display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
+        .log-tag { padding: 0.15rem 0.5rem; border-radius: 6px; font-size: 0.7rem; font-weight: 600; }
+        .log-tag.status-Shipped { background: rgba(0,212,255,0.15); color: var(--scanner); }
+        .log-tag.status-Delivered { background: var(--success-glow); color: var(--success); }
+        .log-tag.status-Returned { background: var(--orange-glow); color: var(--orange); }
+        .log-tag.status-Cancelled { background: var(--error-glow); color: var(--error); }
+        .log-tag.status-Ready { background: var(--purple-glow); color: var(--purple); }
+        .log-tag.courier { background: var(--pink-glow); color: var(--pink); }
+        .log-tag.count { background: var(--accent-glow); color: var(--accent); }
+        .log-entry-stats { display: flex; gap: 0.4rem; font-size: 0.75rem; flex-shrink: 0; }
+        .log-toggle { color: var(--text-dim); font-size: 0.8rem; flex-shrink: 0; transition: transform 0.2s; }
+        .log-entry.open .log-toggle { transform: rotate(90deg); }
+        .log-entry-details { display: none; border-top: 1px solid var(--border); max-height: 200px; overflow-y: auto; }
+        .log-entry.open .log-entry-details { display: block; }
+        .log-detail-item { display: flex; justify-content: space-between; align-items: center; padding: 0.45rem 0.85rem; border-bottom: 1px solid var(--border); font-size: 0.8rem; }
+        .log-detail-item:last-child { border-bottom: none; }
+        .log-detail-order { font-family: 'JetBrains Mono', monospace; font-weight: 600; }
+        .log-detail-status { padding: 0.15rem 0.5rem; border-radius: 8px; font-size: 0.7rem; }
+        .log-detail-success { background: var(--success-glow); color: var(--success); }
+        .log-detail-error { background: var(--error-glow); color: var(--error); }
+        .log-list { max-height: 400px; overflow-y: auto; }
+        .log-sync-status { font-size: 0.7rem; padding: 0.2rem 0.5rem; border-radius: 6px; font-weight: 600; }
+        .log-sync-status.synced { color: var(--success); background: var(--success-glow); }
+        .log-sync-status.local { color: var(--orange); background: var(--orange-glow); }
+        .log-sync-status.loading { color: var(--scanner); background: rgba(0,212,255,0.15); }
+    </style>
 </head>
 <body>
+    <div class="toast" id="toast">✓ تم المسح</div>
 
-<div class="toast" id="toast"></div>
+    <div class="container">
+        <header class="header">
+            <h1>📦 Order Status Updater</h1>
+            <p>تحديث حالة الأوردرات</p>
+        </header>
 
-<div class="container">
+        <!-- Status Selector -->
+        <div class="card">
+            <h2 class="card-title">📌 اختر الحالة</h2>
+            <div class="status-selector">
+                <button class="status-btn Shipped" onclick="selectStatus('Shipped', 'Shipped', '🚚')">
+                    <span class="icon">🚚</span>Shipped
+                </button>
+                <button class="status-btn Delivered" onclick="selectStatus('Delivered', 'Delivered', '✅')">
+                    <span class="icon">✅</span>Delivered
+                </button>
+                <button class="status-btn Returned" onclick="selectStatus('Returned', 'Returned', '↩️')">
+                    <span class="icon">↩️</span>Returned
+                </button>
+                <button class="status-btn Cancelled" onclick="selectStatus('Cancelled', 'Cancelled', '❌')">
+                    <span class="icon">❌</span>Cancelled
+                </button>
+                <button class="status-btn Ready" onclick="selectStatus('Ready', 'Ready', '📦')">
+                    <span class="icon">📦</span>Ready
+                </button>
+            </div>
+        </div>
 
-  <header class="header">
-    <h1>🔫 Scanner Payment — COD</h1>
-    <p>مسح الأوردرات بالسكانر وتسجيل التحصيل الكامل</p>
-  </header>
+        <!-- Courier Selector -->
+        <div class="card" id="courierCard">
+            <h2 class="card-title">🛵 اختر المندوب</h2>
+            <div class="courier-selector">
+                <button class="courier-btn" data-courier="Bosta" onclick="selectCourier(this)">Bosta</button>
+                <button class="courier-btn" data-courier="3laa" onclick="selectCourier(this)">3laa</button>
+                <button class="courier-btn" data-courier="3bdo 3rafa" onclick="selectCourier(this)">3bdo 3rafa</button>
+                <button class="courier-btn" data-courier="Kareem" onclick="selectCourier(this)">Kareem</button>
+                <button class="courier-btn" data-courier="Mohamed Tarek" onclick="selectCourier(this)">Mohamed Tarek</button>
+                <button class="courier-btn" data-courier="Magdy" onclick="selectCourier(this)">Magdy</button>
+                <button class="courier-btn" data-courier="Abo Selim" onclick="selectCourier(this)">Abo Selim</button>
+                <button class="courier-btn" data-courier="Waleed" onclick="selectCourier(this)">Waleed</button>
+                <button class="courier-btn" data-courier="3bd Alrahman" onclick="selectCourier(this)">3bd Alrahman</button>
+                <button class="courier-btn" data-courier="Sobhy" onclick="selectCourier(this)">Sobhy</button>
+                <button class="courier-btn" data-courier="Abo Yassin" onclick="selectCourier(this)">Abo Yassin</button>
+            </div>
+        </div>
 
-  <!-- Scanner input -->
-  <div class="card">
-    <div class="card-title">ماسح الباركود</div>
-    <div class="scanner-area">
-      <span class="scanner-icon">🔫</span>
-      <input
-        type="text"
-        id="scannerInput"
-        class="scanner-input"
-        placeholder="امسح الباركود هنا..."
-        autocomplete="off"
-        spellcheck="false"
-        inputmode="none"
-      >
+        <!-- Scanner -->
+        <div class="card">
+            <h2 class="card-title">📷 ماسح الباركود</h2>
+            <div id="reader"></div>
+            <div class="scan-status" id="scanStatus">اضغط لبدء المسح</div>
+            <button class="scanner-btn" id="scannerBtn" onclick="toggleScanner()">📷 بدء المسح</button>
+            <div class="manual-input">
+                <input type="text" id="manualInput" placeholder="امسح الباركود هنا..." autofocus>
+                <button onclick="addManualEntry()">+</button>
+            </div>
+            <p style="font-size: 0.75rem; color: var(--text-dim); margin-top: 0.5rem; text-align: center;">
+                💡 Scanner Gun: امسح وسيتم الإضافة تلقائياً
+            </p>
+        </div>
+
+        <!-- Scanned List -->
+        <div class="card">
+            <h2 class="card-title">📋 الأوردرات</h2>
+            <div class="counter-bar">
+                <span class="counter-text">العدد: <strong id="count">0</strong></span>
+                <button class="clear-btn" onclick="clearList()">مسح الكل</button>
+            </div>
+            <div class="scanned-list" id="scannedList">
+                <div class="empty-list">لم يتم مسح أي باركود بعد</div>
+            </div>
+        </div>
+
+        <!-- Summary -->
+        <div class="summary-box">
+            <div class="summary-row">
+                <span class="summary-label">الحالة:</span>
+                <span class="summary-value status" id="summaryStatus">—</span>
+            </div>
+            <div class="summary-row" id="courierRow">
+                <span class="summary-label">المندوب:</span>
+                <span class="summary-value courier" id="summaryCourier">—</span>
+            </div>
+            <div class="summary-row">
+                <span class="summary-label">عدد الأوردرات:</span>
+                <span class="summary-value count" id="summaryCount">0</span>
+            </div>
+        </div>
+
+        <!-- Settings -->
+        <button class="settings-toggle" onclick="toggleSettings()">⚙️ الإعدادات</button>
+        <div class="settings-content" id="settings">
+            <div class="card">
+                <div class="input-group">
+                    <label>Flow Companion API Token</label>
+                    <input type="password" id="apiToken" placeholder="أدخل الـ Token">
+                </div>
+                <div class="input-group">
+                    <label>Log Worker URL</label>
+                    <input type="text" id="logWorkerUrl" placeholder="https://log-worker.xxxxx.workers.dev">
+                </div>
+                <div class="input-group">
+                    <label>Log Worker Secret</label>
+                    <input type="password" id="logWorkerSecret" placeholder="WORKER_SECRET">
+                </div>
+            </div>
+        </div>
+
+        <!-- Action -->
+        <button class="btn-primary" id="updateBtn" onclick="startUpdate()">🚀 تحديث الكل</button>
+
+        <div class="progress-bar" id="progressBar">
+            <div class="progress-fill" id="progressFill"></div>
+        </div>
+
+        <!-- Results -->
+        <div class="results" id="results">
+            <div class="results-header">
+                <span>النتائج</span>
+                <span>
+                    <span class="stat-success">✓ <span id="successCount">0</span></span>
+                    &nbsp;
+                    <span class="stat-error">✗ <span id="errorCount">0</span></span>
+                </span>
+            </div>
+            <div class="results-list" id="resultsList"></div>
+        </div>
+
+        <!-- Log Section -->
+        <div class="log-section">
+            <div class="log-header">
+                <h2>📜 سجل العمليات <span class="log-sync-status local" id="logSyncStatus">محلي</span></h2>
+                <div class="log-actions">
+                    <button class="log-btn" onclick="syncFromCloud()" title="جلب من السيرفر">🔄</button>
+                    <button class="log-btn export" onclick="exportLogCSV()">📥 CSV</button>
+                </div>
+            </div>
+            <div class="log-list" id="logList">
+                <div class="log-empty">لا توجد عمليات مسجلة</div>
+            </div>
+        </div>
     </div>
-    <div class="scanner-hint">💡 Scanner Gun: امسح وسيتم الاستعلام والإضافة تلقائياً</div>
-  </div>
 
-  <!-- Stats -->
-  <div class="stats-bar" id="statsBar">
-    <div class="stat-chip blue">
-      <span class="stat-val" id="statCount">0</span>
-      <span class="stat-lbl">أوردر</span>
-    </div>
-    <div class="stat-chip gold">
-      <span class="stat-val" id="statTotal">—</span>
-      <span class="stat-lbl">إجمالي EGP</span>
-    </div>
-    <div class="stat-chip green">
-      <span class="stat-val" id="statDone">0</span>
-      <span class="stat-lbl">تم التحصيل</span>
-    </div>
-  </div>
+    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+    <script>
+        const FLOW_API_URL = 'https://flow-companion.mivicle.app/rest/1/flow/start/order';
+        
+        let scanner = null;
+        let isScanning = false;
+        let scannedOrders = [];
+        let lastCode = '';
+        let lastTime = 0;
 
-  <!-- Action buttons -->
-  <div class="btn-row">
-    <button class="btn btn-clear" id="clearBtn" onclick="clearAll()" disabled title="مسح الكل">🗑</button>
-    <button class="btn btn-pay" id="payBtn" onclick="confirmBulkPay()" disabled>
-      💵 تسجيل التحصيل الكامل
-    </button>
-  </div>
+        let currentSpecifier = '';
+        let currentStatusLabel = '';
+        let currentIcon = '';
+        let currentCourier = '';
 
-  <!-- Progress bar -->
-  <div class="progress-bar-wrap" id="progressWrap">
-    <div class="progress-bar" id="progressBar"></div>
-  </div>
-
-  <!-- Result summary -->
-  <div class="result-box" id="resultBox">
-    <div class="result-title"  id="resultTitle"></div>
-    <div class="result-detail" id="resultDetail"></div>
-  </div>
-
-  <!-- Orders table -->
-  <div class="orders-table-wrap" id="tableWrap">
-    <table>
-      <thead>
-        <tr>
-          <th>رقم الأوردر</th>
-          <th class="col-amount">المبلغ المستحق</th>
-          <th class="col-status">Payment Status</th>
-          <th class="col-status">الحالة</th>
-        </tr>
-      </thead>
-      <tbody id="tableBody"></tbody>
-    </table>
-  </div>
-
-  <!-- Settings -->
-  <button class="settings-toggle" onclick="toggleSettings()">⚙️ الإعدادات</button>
-  <div class="settings-content" id="settings">
-    <div class="card">
-      <div class="input-group">
-        <label>Worker URL</label>
-        <input type="text" id="workerUrl" placeholder="https://your-worker.workers.dev/scanner-payment">
-      </div>
-      <div class="input-group">
-        <label>Worker Secret</label>
-        <input type="password" id="workerSecret" placeholder="WORKER_SECRET">
-      </div>
-    </div>
-  </div>
-
-</div>
-
-<script>
-  // ── Settings ──────────────────────────────────────────────────────
-  document.getElementById('workerUrl').value    = localStorage.getItem('scanner_worker_url')    || '';
-  document.getElementById('workerSecret').value = localStorage.getItem('scanner_worker_secret') || '';
-  document.getElementById('workerUrl').addEventListener('change',    e => localStorage.setItem('scanner_worker_url',    e.target.value));
-  document.getElementById('workerSecret').addEventListener('change', e => localStorage.setItem('scanner_worker_secret', e.target.value));
-
-  // ── State ─────────────────────────────────────────────────────────
-  // orders: [{ id, orderName, amount, canMarkAsPaid, skipReason, financialStatus, status, error }]
-  let orders = [];
-  let isProcessing = false;
-
-  // ── Format numbers as Latin digits ────────────────────────────────
-  function fmt(num) {
-    return Number(num).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  }
-
-  function financialLabel(status) {
-    const map = {
-      PAID:               'Paid',
-      PARTIALLY_PAID:     'Partially Paid',
-      PENDING:            'Pending',
-      AUTHORIZED:         'Authorized',
-      PARTIALLY_REFUNDED: 'Partially Refunded',
-      REFUNDED:           'Refunded',
-      VOIDED:             'Voided',
-      EXPIRED:            'Expired',
-    };
-    return map[status] || status || '—';
-  }
-
-  // ── Scanner adaptive input ────────────────────────────────────────
-  const scannerInput = document.getElementById('scannerInput');
-  let inputTimeout   = null;
-  let lastInputTime  = 0;
-
-  // Keep focus on scanner input always
-  function refocus() { scannerInput.focus(); }
-  window.addEventListener('load', refocus);
-  document.addEventListener('click', e => {
-    if (e.target.tagName !== 'INPUT' && e.target.tagName !== 'BUTTON') {
-      setTimeout(refocus, 50);
-    }
-  });
-
-  scannerInput.addEventListener('input', () => {
-    if (isProcessing) return;
-    if (inputTimeout) clearTimeout(inputTimeout);
-
-    const now = Date.now();
-    const gap = now - lastInputTime;
-    lastInputTime = now;
-
-    // Scanner guns type fast (<80ms between chars) → short timeout
-    const delay = gap < 80 ? 150 : 400;
-    inputTimeout = setTimeout(handleScan, delay);
-  });
-
-  scannerInput.addEventListener('keypress', e => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      if (inputTimeout) clearTimeout(inputTimeout);
-      handleScan();
-    }
-  });
-
-  async function handleScan() {
-    const raw = scannerInput.value.trim();
-    scannerInput.value = '';
-    scannerInput.focus();
-
-    if (!raw || !/^\d+$/.test(raw)) return;
-
-    // Duplicate check
-    if (orders.find(o => o.id === raw)) {
-      showToast(`⚠️ موجود بالفعل`, 'warning');
-      return;
-    }
-
-    const workerUrl    = document.getElementById('workerUrl').value.trim();
-    const workerSecret = document.getElementById('workerSecret').value.trim();
-    if (!workerUrl || !workerSecret) {
-      document.getElementById('settings').classList.add('active');
-      showResult(false, 'أدخل Worker URL و Worker Secret', '');
-      return;
-    }
-
-    // Add row immediately with scanning badge
-    const order = {
-      id: raw, orderName: null, amount: null,
-      canMarkAsPaid: null, skipReason: null,
-      financialStatus: null, status: 'scanning', error: null
-    };
-    orders.unshift(order);
-    showTable();
-    updateStats();
-    renderTable();
-    showToast(`🔫 ${raw}`, 'scan');
-
-    // Fetch preview
-    try {
-      const res  = await fetch(workerUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${workerSecret}` },
-        body: JSON.stringify({ action: 'preview', orderId: raw }),
-      });
-      const data = await res.json();
-
-      if (data.success) {
-        order.orderName      = data.orderName;
-        order.amount         = parseFloat(data.amount);
-        order.canMarkAsPaid  = data.canMarkAsPaid;
-        order.skipReason     = data.skipReason || null;
-        order.financialStatus = data.financialStatus || null;
-        order.status         = data.canMarkAsPaid ? 'ready' : 'skipped';
-      } else if (data.notFound) {
-        order.status = 'notfound';
-      } else {
-        order.status = 'error';
-        order.error  = data.error || 'خطأ';
-      }
-    } catch (e) {
-      order.status = 'error';
-      order.error  = 'خطأ في الاتصال';
-    }
-
-    updateStats();
-    renderTable();
-    updatePayBtn();
-    refocus();
-  }
-
-  // ── Clear all ─────────────────────────────────────────────────────
-  function clearAll() {
-    if (!confirm('مسح كل الأوردرات؟')) return;
-    orders = [];
-    document.getElementById('tableWrap').classList.remove('visible');
-    document.getElementById('statsBar').classList.remove('visible');
-    updateStats();
-    updatePayBtn();
-    hideResult();
-    refocus();
-  }
-
-  // ── Bulk pay ──────────────────────────────────────────────────────
-  async function confirmBulkPay() {
-    const readyOrders = orders.filter(o => o.status === 'ready');
-    if (!readyOrders.length) return;
-
-    const total = readyOrders.reduce((s, o) => s + o.amount, 0);
-    const msg   = `ستقوم بتسجيل التحصيل الكامل لعدد ${readyOrders.length} أوردر\nالإجمالي: ${fmt(total)} EGP\n\nمتأكد؟`;
-    if (!confirm(msg)) return;
-
-    const workerUrl    = document.getElementById('workerUrl').value.trim();
-    const workerSecret = document.getElementById('workerSecret').value.trim();
-
-    isProcessing = true;
-    document.getElementById('payBtn').disabled  = true;
-    document.getElementById('clearBtn').disabled = true;
-    setProgress(0);
-    hideResult();
-
-    let successCount = 0, failCount = 0, done = 0;
-
-    for (const order of readyOrders) {
-      order.status = 'loading';
-      renderTable();
-
-      try {
-        const res  = await fetch(workerUrl, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${workerSecret}` },
-          body: JSON.stringify({ action: 'pay', orderId: order.id, amount: order.amount.toFixed(2) }),
-        });
-        const data = await res.json();
-
-        if (data.success) {
-          order.status          = 'done';
-          order.financialStatus = 'PAID';
-          successCount++;
-        } else {
-          order.status = 'error';
-          order.error  = data.error || 'فشل';
-          failCount++;
+        function needsCourier(specifier) {
+            return specifier !== 'Ready' && specifier !== 'Cancelled';
         }
-      } catch (e) {
-        order.status = 'error';
-        order.error  = 'خطأ في الاتصال';
-        failCount++;
-      }
 
-      done++;
-      setProgress(done / readyOrders.length * 100);
-      updateStats();
-      renderTable();
-    }
+        // Load saved data
+        document.getElementById('apiToken').value = localStorage.getItem('api_token') || '';
+        document.getElementById('logWorkerUrl').value = localStorage.getItem('log_worker_url') || '';
+        document.getElementById('logWorkerSecret').value = localStorage.getItem('log_worker_secret') || '';
+        const saved = localStorage.getItem('scanned_orders');
+        if (saved) { scannedOrders = JSON.parse(saved); renderList(); }
 
-    isProcessing = false;
-    document.getElementById('clearBtn').disabled = false;
-    updatePayBtn();
+        const savedStatus = localStorage.getItem('selected_status');
+        if (savedStatus) { const s = JSON.parse(savedStatus); selectStatus(s.specifier, s.label, s.icon, false); }
 
-    const paidTotal = orders.filter(o => o.status === 'done').reduce((s, o) => s + o.amount, 0);
+        const savedCourier = localStorage.getItem('selected_courier');
+        if (savedCourier) { selectCourier(savedCourier, false); }
 
-    if (successCount > 0 && failCount === 0) {
-      showResult(true,
-        `✅ تم تسجيل التحصيل بنجاح لـ ${successCount} أوردر`,
-        `الإجمالي: ${fmt(paidTotal)} EGP`
-      );
-    } else if (successCount > 0) {
-      showResult(true, `✅ ${successCount} نجح  ⚠️ ${failCount} فشل`, 'راجع الجدول للتفاصيل');
-    } else {
-      showResult(false, 'فشل التحصيل لكل الأوردرات', 'راجع الجدول للتفاصيل');
-    }
+        document.getElementById('apiToken').addEventListener('change', e => localStorage.setItem('api_token', e.target.value));
+        document.getElementById('logWorkerUrl').addEventListener('change', e => localStorage.setItem('log_worker_url', e.target.value));
+        document.getElementById('logWorkerSecret').addEventListener('change', e => localStorage.setItem('log_worker_secret', e.target.value));
 
-    refocus();
-  }
+        // Scanner gun auto-add
+        let inputTimeout = null;
+        let lastInputTime = 0;
+        const scannerInput = document.getElementById('manualInput');
+        
+        function autoAddCode() {
+            const code = scannerInput.value.trim();
+            if (code.length >= 3) {
+                if (!scannedOrders.includes(code)) {
+                    addOrder(code);
+                    scannerInput.value = '';
+                    showToast();
+                    if (navigator.vibrate) navigator.vibrate(100);
+                } else {
+                    scannerInput.value = '';
+                    document.getElementById('scanStatus').textContent = '⚠️ موجود بالفعل: ' + code;
+                    setTimeout(() => { document.getElementById('scanStatus').textContent = 'جاهز للمسح'; }, 1500);
+                }
+            }
+            scannerInput.focus();
+        }
+        
+        scannerInput.addEventListener('input', () => {
+            if (inputTimeout) clearTimeout(inputTimeout);
+            const now = Date.now();
+            const gap = now - lastInputTime;
+            lastInputTime = now;
+            const delay = gap < 80 ? 200 : 300;
+            inputTimeout = setTimeout(autoAddCode, delay);
+        });
 
-  // ── Render ────────────────────────────────────────────────────────
-  function renderTable() {
-    const tbody = document.getElementById('tableBody');
-    tbody.innerHTML = orders.map((o, i) => {
+        scannerInput.addEventListener('keypress', e => {
+            if (e.key === 'Enter') { e.preventDefault(); if (inputTimeout) clearTimeout(inputTimeout); autoAddCode(); }
+        });
 
-      // Order name cell — show #name if available, else ID
-      const nameDisplay = o.orderName ? o.orderName : `ID: ${o.id}`;
+        function focusInput() { document.getElementById('manualInput').focus(); }
+        window.addEventListener('load', focusInput);
+        document.addEventListener('click', e => { if (e.target.tagName !== 'BUTTON' && e.target.tagName !== 'INPUT') setTimeout(focusInput, 100); });
 
-      // Amount cell
-      let amountCell = '<span style="color:var(--text-dim)">—</span>';
-      if (o.amount != null) {
-        let color = 'var(--gold)';
-        if (o.amount < 0)               color = 'var(--error)';
-        else if (o.status === 'skipped') color = 'var(--text-dim)';
-        amountCell = `<span style="color:${color}">${fmt(o.amount)} EGP</span>`;
-      }
+        function selectStatus(specifier, label, icon, save = true) {
+            currentSpecifier = specifier; currentStatusLabel = label; currentIcon = icon;
+            document.querySelectorAll('.status-btn').forEach(btn => btn.classList.remove('active'));
+            const statusBtn = document.querySelector(`.status-btn.${specifier}`);
+            if (statusBtn) statusBtn.classList.add('active');
+            document.getElementById('summaryStatus').textContent = `${icon} ${label}`;
+            document.getElementById('updateBtn').className = `btn-primary ${specifier}`;
+            const show = needsCourier(specifier);
+            document.getElementById('courierCard').style.display = show ? 'block' : 'none';
+            document.getElementById('courierRow').style.display = show ? 'flex' : 'none';
+            if (save) localStorage.setItem('selected_status', JSON.stringify({ specifier, label, icon }));
+        }
 
-      // Badge
-      let badge;
-      if      (o.status === 'scanning') badge = `<span class="badge badge-scanning"><span class="spinner"></span>مسح...</span>`;
-      else if (o.status === 'loading')  badge = `<span class="badge badge-loading"><span class="spinner"></span>جاري...</span>`;
-      else if (o.status === 'ready')    badge = `<span class="badge badge-ready">جاهز</span>`;
-      else if (o.status === 'done')     badge = `<span class="badge badge-done">✓ تم التحصيل</span>`;
-      else if (o.status === 'skipped') {
-        if      (o.skipReason === 'مدفوع بالكامل')  badge = `<span class="badge badge-paid-full">مدفوع بالكامل</span>`;
-        else if (o.skipReason === 'مستحق استرداد')  badge = `<span class="badge badge-refund">يستحق الاسترداد</span>`;
-        else badge = `<span class="badge badge-skipped">${o.skipReason || 'مُتخطى'}</span>`;
-      }
-      else if (o.status === 'notfound') badge = `<span class="badge badge-notfound">غير موجود</span>`;
-      else                              badge = `<span class="badge badge-error" title="${o.error||''}">خطأ</span>`;
+        function selectCourier(element, save = true) {
+            let courier, btnElement;
+            if (typeof element === 'string') { courier = element; btnElement = document.querySelector(`.courier-btn[data-courier="${courier}"]`); }
+            else { btnElement = element; courier = element.getAttribute('data-courier'); }
+            currentCourier = courier;
+            document.querySelectorAll('.courier-btn').forEach(btn => btn.classList.remove('active'));
+            if (btnElement) btnElement.classList.add('active');
+            document.getElementById('summaryCourier').textContent = `🛵 ${courier}`;
+            if (save) localStorage.setItem('selected_courier', courier);
+        }
 
-      const finLabel = o.financialStatus ? financialLabel(o.financialStatus) : '—';
-      const isNew    = i === 0 ? 'row-new' : '';
+        function toggleSettings() { document.getElementById('settings').classList.toggle('active'); }
+        function toggleScanner() { if (isScanning) stopScanner(); else startScanner(); }
 
-      return `<tr class="${isNew}">
-        <td class="order-num-cell">${nameDisplay}</td>
-        <td class="amount-cell">${amountCell}</td>
-        <td class="financial-cell">${finLabel}</td>
-        <td class="status-cell">${badge}</td>
-      </tr>`;
-    }).join('');
-  }
+        function startScanner() {
+            const btn = document.getElementById('scannerBtn');
+            const status = document.getElementById('scanStatus');
+            scanner = new Html5Qrcode("reader");
+            scanner.start({ facingMode: "environment" }, {
+                fps: 10, qrbox: { width: 250, height: 100 }, aspectRatio: 1.5,
+                formatsToSupport: [Html5QrcodeSupportedFormats.CODE_128, Html5QrcodeSupportedFormats.CODE_39, Html5QrcodeSupportedFormats.EAN_13, Html5QrcodeSupportedFormats.EAN_8, Html5QrcodeSupportedFormats.UPC_A, Html5QrcodeSupportedFormats.UPC_E, Html5QrcodeSupportedFormats.QR_CODE]
+            }, onScanSuccess, () => {}).then(() => {
+                isScanning = true; btn.textContent = '⏹️ إيقاف المسح'; btn.classList.add('stop'); status.textContent = 'جاري المسح... وجّه الكاميرا للباركود';
+            }).catch(err => { status.textContent = 'خطأ: ' + err; });
+        }
 
-  function showTable() {
-    document.getElementById('tableWrap').classList.add('visible');
-    document.getElementById('statsBar').classList.add('visible');
-  }
+        function stopScanner() {
+            if (scanner) scanner.stop().then(() => { scanner.clear(); isScanning = false; document.getElementById('scannerBtn').textContent = '📷 بدء المسح'; document.getElementById('scannerBtn').classList.remove('stop'); document.getElementById('scanStatus').textContent = 'تم الإيقاف'; });
+        }
 
-  function updateStats() {
-    const total = orders.length;
-    const ready = orders.filter(o => o.status === 'ready');
-    const done  = orders.filter(o => o.status === 'done');
-    const sum   = [...ready, ...done].reduce((s, o) => s + (o.amount || 0), 0);
+        function onScanSuccess(code) {
+            const now = Date.now();
+            if (code === lastCode && now - lastTime < 2000) return;
+            lastCode = code; lastTime = now;
+            if (!scannedOrders.includes(code)) {
+                addOrder(code); showToast(); if (navigator.vibrate) navigator.vibrate(100);
+                document.getElementById('scanStatus').textContent = '✓ تم: ' + code;
+                document.getElementById('scanStatus').classList.add('success');
+                setTimeout(() => { document.getElementById('scanStatus').textContent = 'جاري المسح...'; document.getElementById('scanStatus').classList.remove('success'); }, 1500);
+            } else { document.getElementById('scanStatus').textContent = '⚠️ موجود بالفعل: ' + code; }
+        }
 
-    document.getElementById('statCount').textContent = total;
-    document.getElementById('statTotal').textContent = sum > 0 ? fmt(sum) : '—';
-    document.getElementById('statDone').textContent  = done.length;
-    document.getElementById('clearBtn').disabled     = total === 0;
-  }
+        function addOrder(code) { scannedOrders.unshift(code); saveOrders(); renderList(true); updateSummaryCount(); }
+        function removeOrder(code) { scannedOrders = scannedOrders.filter(o => o !== code); saveOrders(); renderList(); updateSummaryCount(); }
+        function clearList() { if (confirm('مسح كل الأوردرات؟')) { scannedOrders = []; saveOrders(); renderList(); updateSummaryCount(); } }
+        function saveOrders() { localStorage.setItem('scanned_orders', JSON.stringify(scannedOrders)); }
+        function updateSummaryCount() { document.getElementById('count').textContent = scannedOrders.length; document.getElementById('summaryCount').textContent = scannedOrders.length; }
 
-  function updatePayBtn() {
-    const ready = orders.filter(o => o.status === 'ready').length;
-    document.getElementById('payBtn').disabled = ready === 0 || isProcessing;
-  }
+        function renderList(isNew = false) {
+            const list = document.getElementById('scannedList');
+            document.getElementById('count').textContent = scannedOrders.length;
+            if (scannedOrders.length === 0) { list.innerHTML = '<div class="empty-list">لم يتم مسح أي باركود بعد</div>'; return; }
+            list.innerHTML = scannedOrders.map((order, i) => `<div class="scanned-item ${i === 0 && isNew ? 'new' : ''}"><span>${order}</span><button class="remove-btn" onclick="removeOrder('${order}')">✕</button></div>`).join('');
+        }
 
-  function setProgress(pct) {
-    const wrap = document.getElementById('progressWrap');
-    const bar  = document.getElementById('progressBar');
-    wrap.classList.add('visible');
-    bar.style.width = pct + '%';
-    if (pct >= 100) setTimeout(() => wrap.classList.remove('visible'), 800);
-  }
+        function addManualEntry() {
+            const input = document.getElementById('manualInput');
+            const code = input.value.trim();
+            if (code && !scannedOrders.includes(code)) { addOrder(code); input.value = ''; showToast(); }
+            else if (scannedOrders.includes(code)) { input.value = ''; document.getElementById('scanStatus').textContent = '⚠️ موجود بالفعل: ' + code; setTimeout(() => { document.getElementById('scanStatus').textContent = 'جاهز للمسح'; }, 1500); }
+            input.focus();
+        }
 
-  function showResult(success, title, detail) {
-    const box = document.getElementById('resultBox');
-    box.className = `result-box ${success ? 'success' : 'error'}`;
-    document.getElementById('resultTitle').textContent  = title;
-    document.getElementById('resultDetail').textContent = detail;
-  }
+        function showToast() { const t = document.getElementById('toast'); t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 1000); }
 
-  function hideResult() {
-    document.getElementById('resultBox').className = 'result-box';
-  }
+        async function startUpdate() {
+            const token = document.getElementById('apiToken').value.trim();
+            if (!token) { alert('أدخل API Token في الإعدادات'); toggleSettings(); return; }
+            if (!currentSpecifier) { alert('اختر الحالة أولاً'); return; }
+            if (needsCourier(currentSpecifier) && !currentCourier) { alert('اختر المندوب أولاً'); return; }
+            if (scannedOrders.length === 0) { alert('لا توجد أوردرات'); return; }
 
-  function toggleSettings() {
-    document.getElementById('settings').classList.toggle('active');
-  }
+            let confirmMsg = needsCourier(currentSpecifier)
+                ? `هل تريد تحديث ${scannedOrders.length} أوردر؟\n\nالحالة: ${currentStatusLabel}\nالمندوب: ${currentCourier}`
+                : `هل تريد تحديث ${scannedOrders.length} أوردر؟\n\nالحالة: ${currentStatusLabel}`;
+            if (!confirm(confirmMsg)) return;
+            
+            const btn = document.getElementById('updateBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner"></span> جاري التحديث...';
+            document.getElementById('progressBar').classList.add('active');
+            document.getElementById('results').classList.add('active');
+            
+            const resultsList = document.getElementById('resultsList');
+            resultsList.innerHTML = scannedOrders.map(order => `<div class="result-item" data-order="${order}"><span>${order}</span><span class="result-status result-pending">⏳</span></div>`).join('');
+            
+            let success = 0, errors = 0;
+            const orderResults = [];
+            
+            for (let i = 0; i < scannedOrders.length; i++) {
+                const order = scannedOrders[i];
+                let orderStatus = 'error';
+                try {
+                    const requestBody = { itemId: order, specifier: currentSpecifier };
+                    if (needsCourier(currentSpecifier)) requestBody.additionalParameters = { stringParameter: currentCourier };
+                    
+                    const response = await fetch(FLOW_API_URL, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'Authorization': `bearer ${token}` },
+                        body: JSON.stringify(requestBody)
+                    });
+                    if (response.ok) { updateResult(order, 'success', '✓'); success++; orderStatus = 'success'; }
+                    else { updateResult(order, 'error', '✗'); errors++; }
+                } catch (e) { updateResult(order, 'error', '✗'); errors++; }
+                
+                orderResults.push({ order, status: orderStatus });
+                document.getElementById('progressFill').style.width = `${((i+1)/scannedOrders.length)*100}%`;
+                document.getElementById('successCount').textContent = success;
+                document.getElementById('errorCount').textContent = errors;
+                await new Promise(r => setTimeout(r, 300));
+            }
+            
+            saveLogEntry({
+                date: new Date().toISOString(),
+                status: currentStatusLabel,
+                statusSpecifier: currentSpecifier,
+                courier: needsCourier(currentSpecifier) ? currentCourier : null,
+                totalOrders: scannedOrders.length,
+                success, errors,
+                orders: orderResults
+            });
+            
+            btn.disabled = false;
+            btn.innerHTML = '🚀 تحديث الكل';
+            
+            if (errors === 0) {
+                let msg = needsCourier(currentSpecifier)
+                    ? `✅ تم تحديث ${success} أوردر بنجاح!\n\nالحالة: ${currentStatusLabel}\nالمندوب: ${currentCourier}`
+                    : `✅ تم تحديث ${success} أوردر بنجاح!\n\nالحالة: ${currentStatusLabel}`;
+                alert(msg);
+                scannedOrders = []; saveOrders(); renderList(); updateSummaryCount();
+            } else { alert(`تم: ${success} ناجح، ${errors} فشل`); }
+        }
 
-  function showToast(msg, type = 'scan') {
-    const toast = document.getElementById('toast');
-    toast.textContent = msg;
-    toast.style.background = type === 'warning' ? 'var(--gold)' : 'var(--scanner)';
-    toast.style.color = '#000';
-    toast.classList.add('show');
-    setTimeout(() => toast.classList.remove('show'), 1200);
-  }
-</script>
+        function updateResult(order, status, text) {
+            const item = document.querySelector(`[data-order="${order}"] .result-status`);
+            if (item) { item.className = `result-status result-${status}`; item.textContent = text; }
+        }
+
+        updateSummaryCount();
+
+        // === LOG FUNCTIONS (localStorage + KV sync) ===
+
+        function getLogConfig() {
+            return { url: document.getElementById('logWorkerUrl').value.trim(), secret: document.getElementById('logWorkerSecret').value.trim() };
+        }
+
+        function hasLogWorker() { const { url, secret } = getLogConfig(); return url && secret; }
+
+        function updateSyncStatus(status) {
+            const el = document.getElementById('logSyncStatus');
+            el.className = `log-sync-status ${status}`;
+            if (status === 'synced') el.textContent = '☁️ متزامن';
+            else if (status === 'local') el.textContent = '💾 محلي';
+            else if (status === 'loading') el.textContent = '⏳ جاري...';
+        }
+
+        function getLog() { try { return JSON.parse(localStorage.getItem('update_log') || '[]'); } catch { return []; } }
+
+        async function saveLogEntry(entry) {
+            const log = getLog();
+            log.unshift(entry);
+            localStorage.setItem('update_log', JSON.stringify(log));
+            renderLog(log);
+
+            if (hasLogWorker()) {
+                try {
+                    updateSyncStatus('loading');
+                    const { url, secret } = getLogConfig();
+                    const res = await fetch(`${url}/log`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${secret}` },
+                        body: JSON.stringify(entry)
+                    });
+                    if (res.ok) {
+                        const data = await res.json();
+                        if (data.entry && data.entry.orders) {
+                            const localLog = getLog();
+                            if (localLog.length > 0 && localLog[0].date === entry.date) {
+                                localLog[0] = data.entry;
+                                localStorage.setItem('update_log', JSON.stringify(localLog));
+                                renderLog(localLog);
+                            }
+                        }
+                        updateSyncStatus('synced');
+                    } else { updateSyncStatus('local'); }
+                } catch { updateSyncStatus('local'); }
+            }
+        }
+
+        async function syncFromCloud() {
+            if (!hasLogWorker()) { alert('أدخل Log Worker URL و Secret في الإعدادات'); document.getElementById('settings').classList.add('active'); return; }
+            try {
+                updateSyncStatus('loading');
+                const { url, secret } = getLogConfig();
+                const res = await fetch(`${url}/log`, { method: 'GET', headers: { 'Authorization': `Bearer ${secret}` } });
+                if (!res.ok) throw new Error('فشل الاتصال');
+                const data = await res.json();
+                const merged = mergeAndDedupe(getLog(), data.log || []);
+                localStorage.setItem('update_log', JSON.stringify(merged));
+                renderLog(merged);
+                updateSyncStatus('synced');
+            } catch (err) { updateSyncStatus('local'); alert('فشل جلب السجل: ' + err.message); }
+        }
+
+        function mergeAndDedupe(localLog, cloudLog) {
+            const seen = new Set(); const merged = [];
+            for (const entry of [...localLog, ...cloudLog]) {
+                if (!seen.has(entry.date)) { seen.add(entry.date); merged.push(entry); }
+            }
+            merged.sort((a, b) => new Date(b.date) - new Date(a.date));
+            return merged;
+        }
+
+        function toggleLogEntry(el) { el.closest('.log-entry').classList.toggle('open'); }
+
+        function formatDate(iso) {
+            const d = new Date(iso);
+            return `${d.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' })} — ${d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: true })}`;
+        }
+
+        function renderLog(log) {
+            if (!log) log = getLog();
+            const container = document.getElementById('logList');
+            if (log.length === 0) { container.innerHTML = '<div class="log-empty">لا توجد عمليات مسجلة</div>'; return; }
+
+            container.innerHTML = log.map(entry => `
+                <div class="log-entry">
+                    <div class="log-entry-header" onclick="toggleLogEntry(this)">
+                        <div class="log-entry-info">
+                            <div class="log-entry-date">${formatDate(entry.date)}</div>
+                            <div class="log-entry-summary">
+                                <span class="log-tag status-${entry.statusSpecifier}">${entry.status}</span>
+                                ${entry.courier ? `<span class="log-tag courier">${entry.courier}</span>` : ''}
+                                <span class="log-tag count">${entry.totalOrders} أوردر</span>
+                            </div>
+                        </div>
+                        <div class="log-entry-stats">
+                            <span class="stat-success">✓${entry.success}</span>
+                            <span class="stat-error">✗${entry.errors}</span>
+                        </div>
+                        <span class="log-toggle">▶</span>
+                    </div>
+                    <div class="log-entry-details">
+                        ${entry.orders.map(o => `
+                            <div class="log-detail-item">
+                                <span class="log-detail-order">${o.orderName || ''} <span style="color:var(--text-dim);font-size:0.7rem">${o.order}</span></span>
+                                <span class="log-detail-status log-detail-${o.status}">${o.status === 'success' ? '✓ ناجح' : '✗ فشل'}</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function exportLogCSV() {
+            const log = getLog();
+            if (log.length === 0) { alert('السجل فارغ'); return; }
+            const BOM = '\uFEFF';
+            const headers = ['التاريخ', 'الوقت', 'الحالة', 'المندوب', 'رقم الأوردر', 'Order ID', 'النتيجة'];
+            const rows = [headers.join(',')];
+            for (const entry of log) {
+                const d = new Date(entry.date);
+                const date = d.toLocaleDateString('en-GB');
+                const time = d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
+                for (const o of entry.orders) {
+                    rows.push([date, time, entry.status, entry.courier || '—', o.orderName || '—', `="${o.order}"`, o.status === 'success' ? 'ناجح' : 'فشل'].join(','));
+                }
+            }
+            const blob = new Blob([BOM + rows.join('\n')], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a'); a.href = url; a.download = `order-log-${new Date().toISOString().slice(0,10)}.csv`; a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        renderLog();
+        if (hasLogWorker()) syncFromCloud();
+    </script>
 </body>
 </html>
