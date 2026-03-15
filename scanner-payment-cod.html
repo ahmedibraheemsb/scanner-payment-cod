@@ -93,7 +93,8 @@
     border-bottom: 1px solid var(--border);
     white-space: nowrap;
   }
-  thead th.col-num    { text-align: right; }
+  thead th.col-num     { text-align: right; }
+  thead th.col-courier { text-align: right; }
   thead th.col-money  { text-align: left; direction: ltr; }
   thead th.col-status { text-align: center; }
 
@@ -110,6 +111,7 @@
   tr.expanded .expand-icon { transform: rotate(90deg); }
 
   .order-num-cell { font-family: 'JetBrains Mono', monospace; font-weight: 600; color: var(--neutral); font-size: 0.85rem; }
+  .courier-cell   { font-family: 'IBM Plex Sans Arabic', sans-serif; font-size: 0.82rem; color: #ec4899; font-weight: 600; }
   .money-cell { font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 0.85rem; text-align: left; direction: ltr; white-space: nowrap; }
   .status-cell   { text-align: center; }
   .financial-cell { font-size: 0.75rem; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; text-align: center; }
@@ -312,6 +314,7 @@
       <thead>
         <tr>
           <th class="col-num">رقم الأوردر</th>
+          <th class="col-courier">المندوب</th>
           <th class="col-money">فرعي</th>
           <th class="col-money">شحن</th>
           <th class="col-money">الإجمالي</th>
@@ -431,7 +434,7 @@
       id: raw, orderName: null,
       amount: null, subtotal: null, shippingAmount: null,
       canMarkAsPaid: null, skipReason: null, financialStatus: null,
-      lineItems: [], status: 'scanning', error: null
+      courier: null, lineItems: [], status: 'scanning', error: null
     };
     orders.unshift(order);
     showTable(); updateStats(); renderTable();
@@ -453,6 +456,7 @@
         order.canMarkAsPaid  = data.canMarkAsPaid;
         order.skipReason     = data.skipReason || null;
         order.financialStatus = data.financialStatus || null;
+        order.courier        = data.courier || null;
         order.lineItems      = data.lineItems || [];
         order.status         = data.canMarkAsPaid ? 'ready' : 'skipped';
       } else if (data.notFound) {
@@ -528,6 +532,7 @@
       orders: readyOrders.map(o => ({
         order:         o.id,
         orderName:     o.orderName || '',
+        courier:       o.courier || '',
         amount:        o.amount        != null ? o.amount.toFixed(2)        : '0.00',
         subtotal:      o.subtotal      != null ? o.subtotal.toFixed(2)      : '0.00',
         shippingAmount: o.shippingAmount != null ? o.shippingAmount.toFixed(2) : '0.00',
@@ -592,8 +597,10 @@
       const hasDetails = o.lineItems && o.lineItems.length > 0;
       const expandIcon = hasDetails ? `<span class="expand-icon">▶</span>` : '';
 
+      const courierDisplay = o.courier || '<span style="color:var(--text-dim)">—</span>';
       rows.push(`<tr class="order-row${i===0?' row-new':''}" data-idx="${i}" onclick="${hasDetails?`toggleRow(${i})`:''}" style="${hasDetails?'':'cursor:default'}">
         <td class="order-num-cell">${expandIcon}${nameDisplay}</td>
+        <td class="courier-cell">${courierDisplay}</td>
         <td class="money-cell">${moneyCell(o.subtotal, true)}</td>
         <td class="money-cell">${moneyCell(o.shippingAmount, true)}</td>
         <td class="money-cell">${moneyCell(o.amount, false)}</td>
@@ -635,7 +642,7 @@
       }
 
       rows.push(`<tr class="detail-row" data-idx="${i}">
-        <td colspan="6">${hasDetails ? `<div class="detail-box">${detailContent}</div>` : ''}</td>
+        <td colspan="7">${hasDetails ? `<div class="detail-box">${detailContent}</div>` : ''}</td>
       </tr>`);
     });
 
@@ -803,7 +810,7 @@
             return `
               <div class="log-detail-item">
                 <div class="log-detail-main" onclick="${hasSub ? 'toggleLogDetailItem(this)' : ''}">
-                  <span class="log-detail-order">${o.orderName || ''} <span style="color:var(--text-dim);font-size:0.7rem">${o.order}</span></span>
+                  <span class="log-detail-order">${o.orderName || ''} <span style="color:var(--text-dim);font-size:0.7rem">${o.order}</span>${o.courier ? ` <span style="color:#ec4899;font-size:0.72rem;font-weight:600">${o.courier}</span>` : ''}</span>
                   <span class="log-detail-amount">${o.amount ? o.amount + ' EGP' : ''}</span>
                   <span class="log-detail-status log-detail-${o.status}">${o.status === 'success' ? '✓ ناجح' : '✗ فشل'}</span>
                   ${hasSub ? '<span style="color:var(--text-dim);font-size:0.7rem;margin-right:0.3rem">▶</span>' : ''}
@@ -835,7 +842,7 @@
     }
 
     const BOM = '\uFEFF';
-    const headers = ['التاريخ', 'الوقت', 'رقم الأوردر', 'Order ID', 'فرعي EGP', 'شحن EGP', 'الإجمالي EGP', 'SKU', 'الكمية', 'سعر الوحدة EGP', 'إجمالي السطر EGP', 'النتيجة', 'الخطأ'];
+    const headers = ['التاريخ', 'الوقت', 'المندوب', 'رقم الأوردر', 'Order ID', 'فرعي EGP', 'شحن EGP', 'الإجمالي EGP', 'SKU', 'الكمية', 'سعر الوحدة EGP', 'إجمالي السطر EGP', 'النتيجة', 'الخطأ'];
     const rows = [headers.join(',')];
 
     for (const entry of log) {
@@ -847,6 +854,7 @@
         const baseFields = [
           date,
           time,
+          o.courier        || '—',
           o.orderName      || '—',
           `="${o.order}"`,
           o.subtotal       || '0.00',
