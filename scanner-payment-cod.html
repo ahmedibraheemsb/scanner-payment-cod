@@ -859,17 +859,21 @@
         ];
 
         if (o.lineItems && o.lineItems.length > 0) {
-          // One row per SKU — repeat order fields on each row
-          for (const li of o.lineItems) {
+          // First SKU row: include all order fields + result fields
+          // Subsequent SKU rows: only SKU columns (order fields left blank)
+          const emptyBase   = baseFields.map(() => '');
+          const emptyResult = resultFields.map(() => '');
+          o.lineItems.forEach((li, idx) => {
+            const isFirst = idx === 0;
             rows.push([
-              ...baseFields,
+              ...(isFirst ? baseFields   : emptyBase),
               `"${li.sku}"`,
               li.quantity,
               li.unitPrice  || '0.00',
               li.totalPrice || '0.00',
-              ...resultFields,
+              ...(isFirst ? resultFields : emptyResult),
             ].join(','));
-          }
+          });
         } else {
           // No SKUs — single row with empty SKU columns
           rows.push([...baseFields, '', '', '', '', ...resultFields].join(','));
