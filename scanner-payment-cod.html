@@ -125,13 +125,17 @@
   .detail-label { font-size: 0.68rem; color: var(--text-dim); font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 0.3rem; }
 
   /* SKU table inside detail */
-  .sku-table { width: 100%; border-collapse: collapse; direction: ltr; }
+  .sku-table { width: 100%; border-collapse: collapse; direction: rtl; }
+  .sku-table th { padding: 0.2rem 0.3rem; font-family: 'JetBrains Mono', monospace; font-size: 0.63rem; font-weight: 600; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.03em; border-bottom: 1px solid var(--border); text-align: right; }
+  .sku-table th.th-qty   { text-align: center; }
+  .sku-table th.th-unit  { text-align: left; }
+  .sku-table th.th-total { text-align: left; }
   .sku-table td { padding: 0.2rem 0.3rem; font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; vertical-align: middle; }
-  .sku-table .td-sku   { color: var(--scanner); font-weight: 600; }
+  .sku-table .td-sku   { color: var(--scanner); font-weight: 600; text-align: right; }
   .sku-table .td-qty   { color: var(--text-dim); text-align: center; }
-  .sku-table .td-unit  { color: var(--text-dim); text-align: right; }
-  .sku-table .td-total { color: var(--gold); font-weight: 700; text-align: right; }
-  .sku-table .td-sep   { color: var(--border); padding: 0 0.2rem; }
+  .sku-table .td-unit  { color: var(--text-dim); text-align: left; direction: ltr; }
+  .sku-table .td-total { color: var(--gold); font-weight: 700; text-align: left; direction: ltr; }
+  .sku-table .td-sep   { color: var(--border); padding: 0 0.15rem; text-align: center; }
 
   /* ── Badges ── */
   .badge { display: inline-block; padding: 0.2rem 0.5rem; border-radius: 6px; font-size: 0.7rem; font-weight: 600; white-space: nowrap; }
@@ -214,13 +218,17 @@
   .log-detail-item.open .log-detail-sub { display: block; }
   .log-sub-label { font-size: 0.68rem; color: var(--text-dim); font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 0.25rem; margin-top: 0.3rem; }
   .log-sub-label:first-child { margin-top: 0; }
-  .log-sku-table { width: 100%; border-collapse: collapse; direction: ltr; }
+  .log-sku-table { width: 100%; border-collapse: collapse; direction: rtl; }
+  .log-sku-table th { padding: 0.18rem 0.25rem; font-family: 'JetBrains Mono', monospace; font-size: 0.62rem; font-weight: 600; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.03em; border-bottom: 1px solid var(--border); text-align: right; }
+  .log-sku-table th.th-qty   { text-align: center; }
+  .log-sku-table th.th-unit  { text-align: left; }
+  .log-sku-table th.th-total { text-align: left; }
   .log-sku-table td { padding: 0.18rem 0.25rem; font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; vertical-align: middle; }
-  .log-sku-table .td-sku   { color: var(--scanner); font-weight: 600; }
+  .log-sku-table .td-sku   { color: var(--scanner); font-weight: 600; text-align: right; }
   .log-sku-table .td-qty   { color: var(--text-dim); text-align: center; }
-  .log-sku-table .td-unit  { color: var(--text-dim); text-align: right; }
-  .log-sku-table .td-total { color: var(--gold); font-weight: 700; text-align: right; }
-  .log-sku-table .td-sep   { color: var(--border); padding: 0 0.15rem; }
+  .log-sku-table .td-unit  { color: var(--text-dim); text-align: left; direction: ltr; }
+  .log-sku-table .td-total { color: var(--gold); font-weight: 700; text-align: left; direction: ltr; }
+  .log-sku-table .td-sep   { color: var(--border); padding: 0 0.15rem; text-align: center; }
   .log-shipping-val { font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: var(--gold); direction: ltr; }
 
   .log-check { width: 16px; height: 16px; accent-color: var(--gold); cursor: pointer; flex-shrink: 0; margin-left: 0.4rem; }
@@ -601,19 +609,28 @@
           const total = parseFloat(li.totalPrice);
           return `<tr>
             <td class="td-sku">${li.sku}</td>
-            <td class="td-sep">×</td>
+            <td class="td-sep"></td>
             <td class="td-qty">${li.quantity}</td>
-            <td class="td-sep">|</td>
+            <td class="td-sep"></td>
             <td class="td-unit">${fmt(unit)}</td>
-            <td class="td-sep">=</td>
+            <td class="td-sep"></td>
             <td class="td-total">${fmt(total)}</td>
           </tr>`;
         }).join('');
+        const skuHeader = `<thead><tr>
+          <th class="th-sku">SKU</th>
+          <th></th>
+          <th class="th-qty">Qty</th>
+          <th></th>
+          <th class="th-unit">Unit Price</th>
+          <th></th>
+          <th class="th-total">Total</th>
+        </tr></thead>`;
 
         detailContent = `
           <div class="detail-section">
             <div class="detail-label">SKUs</div>
-            <table class="sku-table">${skuRows}</table>
+            <table class="sku-table">${skuHeader}<tbody>${skuRows}</tbody></table>
           </div>`;
       }
 
@@ -761,14 +778,20 @@
         <div class="log-entry-details">
           ${entry.orders.map(o => {
             const hasSkus = o.lineItems && o.lineItems.length > 0;
+            const skuHeader2 = `<thead><tr>
+                <th class="th-sku">SKU</th><th></th>
+                <th class="th-qty">Qty</th><th></th>
+                <th class="th-unit">Unit Price</th><th></th>
+                <th class="th-total">Total</th>
+              </tr></thead>`;
             const skuRows = hasSkus
               ? o.lineItems.map(li => `<tr>
                   <td class="td-sku">${li.sku}</td>
-                  <td class="td-sep">×</td>
+                  <td class="td-sep"></td>
                   <td class="td-qty">${li.quantity}</td>
-                  <td class="td-sep">|</td>
+                  <td class="td-sep"></td>
                   <td class="td-unit">${fmt(li.unitPrice)}</td>
-                  <td class="td-sep">=</td>
+                  <td class="td-sep"></td>
                   <td class="td-total">${fmt(li.totalPrice)}</td>
                 </tr>`).join('')
               : '';
@@ -786,7 +809,7 @@
                   ${hasSub ? '<span style="color:var(--text-dim);font-size:0.7rem;margin-right:0.3rem">▶</span>' : ''}
                 </div>
                 ${hasSub ? `<div class="log-detail-sub">
-                  ${hasSkus ? `<div class="log-sub-label">SKUs</div><table class="log-sku-table">${skuRows}</table>` : ''}
+                  ${hasSkus ? `<div class="log-sub-label">SKUs</div><table class="log-sku-table">${skuHeader2}<tbody>${skuRows}</tbody></table>` : ''}
                   ${shippingHtml}
                 </div>` : ''}
               </div>`;
@@ -812,7 +835,7 @@
     }
 
     const BOM = '\uFEFF';
-    const headers = ['التاريخ', 'الوقت', 'رقم الأوردر', 'Order ID', 'فرعي EGP', 'شحن EGP', 'الإجمالي EGP', 'SKUs', 'النتيجة', 'الخطأ'];
+    const headers = ['التاريخ', 'الوقت', 'رقم الأوردر', 'Order ID', 'فرعي EGP', 'شحن EGP', 'الإجمالي EGP', 'SKU', 'الكمية', 'سعر الوحدة EGP', 'إجمالي السطر EGP', 'النتيجة', 'الخطأ'];
     const rows = [headers.join(',')];
 
     for (const entry of log) {
@@ -821,22 +844,36 @@
       const time = d.toLocaleTimeString('en-GB', { hour:'2-digit', minute:'2-digit', second:'2-digit', hour12: false });
 
       for (const o of entry.orders) {
-        const skusStr = (o.lineItems && o.lineItems.length > 0)
-          ? o.lineItems.map(li => `${li.sku}x${li.quantity}@${li.unitPrice}`).join(' | ')
-          : '';
-
-        rows.push([
+        const baseFields = [
           date,
           time,
-          o.orderName   || '—',
+          o.orderName      || '—',
           `="${o.order}"`,
-          o.subtotal     || '0.00',
+          o.subtotal       || '0.00',
           o.shippingAmount || '0.00',
-          o.amount       || '0.00',
-          skusStr        ? `"${skusStr}"` : '',
+          o.amount         || '0.00',
+        ];
+        const resultFields = [
           o.status === 'success' ? 'ناجح' : 'فشل',
-          o.error        ? `"${o.error}"` : '',
-        ].join(','));
+          o.error ? `"${o.error}"` : '',
+        ];
+
+        if (o.lineItems && o.lineItems.length > 0) {
+          // One row per SKU — repeat order fields on each row
+          for (const li of o.lineItems) {
+            rows.push([
+              ...baseFields,
+              `"${li.sku}"`,
+              li.quantity,
+              li.unitPrice  || '0.00',
+              li.totalPrice || '0.00',
+              ...resultFields,
+            ].join(','));
+          }
+        } else {
+          // No SKUs — single row with empty SKU columns
+          rows.push([...baseFields, '', '', '', '', ...resultFields].join(','));
+        }
       }
     }
 
