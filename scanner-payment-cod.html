@@ -360,6 +360,57 @@
     margin-right: 0.3rem;
   }
   @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── Log section ─────────────────────────────────────────────── */
+  .log-section { margin-top: 1rem; }
+  .log-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; }
+  .log-header h2 { font-size: 0.95rem; font-weight: 600; display: flex; align-items: center; gap: 0.5rem; }
+  .log-actions { display: flex; gap: 0.5rem; }
+  .log-btn {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    padding: 0.35rem 0.7rem;
+    border-radius: 6px;
+    font-family: inherit;
+    font-size: 0.75rem;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .log-btn:hover { border-color: var(--text-dim); color: var(--text); }
+  .log-btn.export:hover { border-color: var(--success); color: var(--success); }
+  .log-empty { text-align: center; padding: 1.5rem; color: var(--text-dim); font-size: 0.85rem; border: 1px solid var(--border); border-radius: 8px; }
+  .log-list { max-height: 400px; overflow-y: auto; }
+  .log-entry { background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; margin-bottom: 0.5rem; overflow: hidden; transition: border-color 0.2s; }
+  .log-entry:hover { border-color: var(--text-dim); }
+  .log-entry-header { display: flex; justify-content: space-between; align-items: center; padding: 0.7rem 0.85rem; cursor: pointer; gap: 0.5rem; }
+  .log-entry-info { flex: 1; min-width: 0; }
+  .log-entry-date { font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: var(--text-dim); margin-bottom: 0.25rem; }
+  .log-entry-summary { font-size: 0.8rem; display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
+  .log-tag { padding: 0.15rem 0.5rem; border-radius: 6px; font-size: 0.7rem; font-weight: 600; }
+  .log-tag.tag-payment { background: rgba(245,158,11,0.15); color: var(--gold); }
+  .log-tag.tag-count   { background: rgba(59,130,246,0.12); color: var(--blue); }
+  .log-entry-stats { display: flex; gap: 0.4rem; font-size: 0.75rem; flex-shrink: 0; }
+  .stat-success { color: var(--success); font-family: 'JetBrains Mono', monospace; font-weight: 700; }
+  .stat-error   { color: var(--error);   font-family: 'JetBrains Mono', monospace; font-weight: 700; }
+  .log-toggle { color: var(--text-dim); font-size: 0.8rem; flex-shrink: 0; transition: transform 0.2s; }
+  .log-entry.open .log-toggle { transform: rotate(90deg); }
+  .log-entry-details { display: none; border-top: 1px solid var(--border); max-height: 200px; overflow-y: auto; }
+  .log-entry.open .log-entry-details { display: block; }
+  .log-detail-item { display: flex; justify-content: space-between; align-items: center; padding: 0.45rem 0.85rem; border-bottom: 1px solid var(--border); font-size: 0.8rem; }
+  .log-detail-item:last-child { border-bottom: none; }
+  .log-detail-order { font-family: 'JetBrains Mono', monospace; font-weight: 600; }
+  .log-detail-amount { font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: var(--gold); }
+  .log-detail-status { padding: 0.15rem 0.5rem; border-radius: 8px; font-size: 0.7rem; }
+  .log-detail-success { background: var(--success-glow); color: var(--success); }
+  .log-detail-error   { background: var(--error-glow);   color: var(--error); }
+  .log-check { width: 16px; height: 16px; accent-color: var(--gold); cursor: pointer; flex-shrink: 0; margin-left: 0.4rem; }
+  .log-btn.export-selected { display: none; }
+  .log-btn.export-selected.visible { display: inline-block; }
+  .log-sync-status { font-size: 0.7rem; padding: 0.2rem 0.5rem; border-radius: 6px; font-weight: 600; }
+  .log-sync-status.synced  { color: var(--success); background: var(--success-glow); }
+  .log-sync-status.local   { color: var(--gold);    background: var(--gold-glow); }
+  .log-sync-status.loading { color: var(--scanner); background: var(--scanner-glow); }
 </style>
 </head>
 <body>
@@ -453,6 +504,29 @@
         <label>Worker Secret</label>
         <input type="password" id="workerSecret" placeholder="WORKER_SECRET">
       </div>
+      <div class="input-group">
+        <label>Log Worker URL</label>
+        <input type="text" id="logWorkerUrl" placeholder="https://cod-log-worker.xxxxx.workers.dev">
+      </div>
+      <div class="input-group" style="margin-bottom:0">
+        <label>Log Worker Secret</label>
+        <input type="password" id="logWorkerSecret" placeholder="LOG_WORKER_SECRET">
+      </div>
+    </div>
+  </div>
+
+  <!-- Log section -->
+  <div class="log-section">
+    <div class="log-header">
+      <h2>📜 سجل العمليات <span class="log-sync-status local" id="logSyncStatus">محلي</span></h2>
+      <div class="log-actions">
+        <button class="log-btn" onclick="syncFromCloud()" title="جلب من السيرفر">🔄</button>
+        <button class="log-btn export-selected" id="exportSelectedBtn" onclick="exportLogCSV(true)">📥 تصدير المحدد</button>
+        <button class="log-btn export" onclick="exportLogCSV(false)">📥 تصدير الكل</button>
+      </div>
+    </div>
+    <div class="log-list" id="logList">
+      <div class="log-empty">لا توجد عمليات مسجلة</div>
     </div>
   </div>
 
@@ -462,8 +536,12 @@
   // ── Settings ──────────────────────────────────────────────────────
   document.getElementById('workerUrl').value    = localStorage.getItem('scanner_worker_url')    || '';
   document.getElementById('workerSecret').value = localStorage.getItem('scanner_worker_secret') || '';
+  document.getElementById('logWorkerUrl').value    = localStorage.getItem('cod_log_worker_url')    || '';
+  document.getElementById('logWorkerSecret').value = localStorage.getItem('cod_log_worker_secret') || '';
   document.getElementById('workerUrl').addEventListener('change',    e => localStorage.setItem('scanner_worker_url',    e.target.value));
   document.getElementById('workerSecret').addEventListener('change', e => localStorage.setItem('scanner_worker_secret', e.target.value));
+  document.getElementById('logWorkerUrl').addEventListener('change',    e => localStorage.setItem('cod_log_worker_url',    e.target.value));
+  document.getElementById('logWorkerSecret').addEventListener('change', e => localStorage.setItem('cod_log_worker_secret', e.target.value));
 
   // ── State ─────────────────────────────────────────────────────────
   // orders: [{ id, orderName, amount, canMarkAsPaid, skipReason, financialStatus, status, error }]
@@ -661,6 +739,23 @@
 
     const paidTotal = orders.filter(o => o.status === 'done').reduce((s, o) => s + o.amount, 0);
 
+    // ── Save to log ───────────────────────────────────────────────
+    const logEntry = {
+      date: new Date().toISOString(),
+      totalOrders: readyOrders.length,
+      success: successCount,
+      errors: failCount,
+      totalAmount: paidTotal.toFixed(2),
+      orders: readyOrders.map(o => ({
+        order: o.id,
+        orderName: o.orderName || '',
+        amount: o.amount != null ? o.amount.toFixed(2) : '0.00',
+        status: o.status === 'done' ? 'success' : 'error',
+        error: o.error || null,
+      })),
+    };
+    saveLogEntry(logEntry);
+
     if (successCount > 0 && failCount === 0) {
       showResult(true,
         `✅ تم تسجيل التحصيل بنجاح لـ ${successCount} أوردر`,
@@ -763,6 +858,199 @@
     document.getElementById('settings').classList.toggle('active');
   }
 
+  // ═══════════════════════════════════════════════════════════════
+  // LOG FUNCTIONS — localStorage + KV sync
+  // ═══════════════════════════════════════════════════════════════
+
+  function getLogConfig() {
+    return {
+      url:    document.getElementById('logWorkerUrl').value.trim(),
+      secret: document.getElementById('logWorkerSecret').value.trim(),
+    };
+  }
+
+  function hasLogWorker() {
+    const { url, secret } = getLogConfig();
+    return url && secret;
+  }
+
+  function updateSyncStatus(status) {
+    const el = document.getElementById('logSyncStatus');
+    el.className = `log-sync-status ${status}`;
+    if      (status === 'synced')  el.textContent = '☁️ متزامن';
+    else if (status === 'local')   el.textContent = '💾 محلي';
+    else if (status === 'loading') el.textContent = '⏳ جاري...';
+  }
+
+  function getLog() {
+    try { return JSON.parse(localStorage.getItem('cod_payment_log') || '[]'); } catch { return []; }
+  }
+
+  async function saveLogEntry(entry) {
+    const log = getLog();
+    log.unshift(entry);
+    localStorage.setItem('cod_payment_log', JSON.stringify(log));
+    renderLog(log);
+
+    if (hasLogWorker()) {
+      try {
+        updateSyncStatus('loading');
+        const { url, secret } = getLogConfig();
+        const res = await fetch(`${url}/log`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${secret}` },
+          body: JSON.stringify(entry),
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.entry && data.entry.orders) {
+            const localLog = getLog();
+            if (localLog.length > 0 && localLog[0].date === entry.date) {
+              localLog[0] = data.entry;
+              localStorage.setItem('cod_payment_log', JSON.stringify(localLog));
+              renderLog(localLog);
+            }
+          }
+          updateSyncStatus('synced');
+        } else {
+          updateSyncStatus('local');
+        }
+      } catch {
+        updateSyncStatus('local');
+      }
+    }
+  }
+
+  async function syncFromCloud() {
+    if (!hasLogWorker()) {
+      alert('أدخل Log Worker URL و Secret في الإعدادات');
+      document.getElementById('settings').classList.add('active');
+      return;
+    }
+    try {
+      updateSyncStatus('loading');
+      const { url, secret } = getLogConfig();
+      const res = await fetch(`${url}/log`, {
+        method: 'GET',
+        headers: { 'Authorization': `Bearer ${secret}` },
+      });
+      if (!res.ok) throw new Error('فشل الاتصال');
+      const data = await res.json();
+      const merged = mergeAndDedupe(getLog(), data.log || []);
+      localStorage.setItem('cod_payment_log', JSON.stringify(merged));
+      renderLog(merged);
+      updateSyncStatus('synced');
+    } catch (err) {
+      updateSyncStatus('local');
+      alert('فشل جلب السجل: ' + err.message);
+    }
+  }
+
+  function mergeAndDedupe(localLog, cloudLog) {
+    const seen = new Set(); const merged = [];
+    for (const entry of [...localLog, ...cloudLog]) {
+      if (!seen.has(entry.date)) { seen.add(entry.date); merged.push(entry); }
+    }
+    merged.sort((a, b) => new Date(b.date) - new Date(a.date));
+    return merged;
+  }
+
+  function toggleLogEntry(el) { el.closest('.log-entry').classList.toggle('open'); }
+
+  function formatLogDate(iso) {
+    const d = new Date(iso);
+    return `${d.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' })} — ${d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: true })}`;
+  }
+
+  function onLogCheckChange() {
+    const anyChecked = document.querySelectorAll('.log-check:checked').length > 0;
+    document.getElementById('exportSelectedBtn').classList.toggle('visible', anyChecked);
+  }
+
+  function renderLog(log) {
+    if (!log) log = getLog();
+    const container = document.getElementById('logList');
+    if (log.length === 0) {
+      container.innerHTML = '<div class="log-empty">لا توجد عمليات مسجلة</div>';
+      return;
+    }
+    container.innerHTML = log.map((entry, i) => `
+      <div class="log-entry">
+        <div class="log-entry-header">
+          <input type="checkbox" class="log-check" data-log-index="${i}" onchange="onLogCheckChange()">
+          <div class="log-entry-info" onclick="toggleLogEntry(this)">
+            <div class="log-entry-date">${formatLogDate(entry.date)}</div>
+            <div class="log-entry-summary">
+              <span class="log-tag tag-payment">💵 تحصيل COD</span>
+              <span class="log-tag tag-count">${entry.totalOrders} أوردر</span>
+              ${entry.totalAmount ? `<span class="log-tag tag-payment">${parseFloat(entry.totalAmount).toLocaleString('en-EG', {minimumFractionDigits:2})} EGP</span>` : ''}
+            </div>
+          </div>
+          <div class="log-entry-stats">
+            <span class="stat-success">✓${entry.success}</span>
+            <span class="stat-error">✗${entry.errors}</span>
+          </div>
+          <span class="log-toggle" onclick="toggleLogEntry(this)">▶</span>
+        </div>
+        <div class="log-entry-details">
+          ${entry.orders.map(o => `
+            <div class="log-detail-item">
+              <span class="log-detail-order">${o.orderName || ''} <span style="color:var(--text-dim);font-size:0.7rem">${o.order}</span></span>
+              <span class="log-detail-amount">${o.amount ? o.amount + ' EGP' : ''}</span>
+              <span class="log-detail-status log-detail-${o.status}">${o.status === 'success' ? '✓ ناجح' : '✗ فشل'}</span>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `).join('');
+    document.getElementById('exportSelectedBtn').classList.remove('visible');
+  }
+
+  function exportLogCSV(selectedOnly) {
+    const fullLog = getLog();
+    if (fullLog.length === 0) { alert('السجل فارغ'); return; }
+
+    let log;
+    if (selectedOnly) {
+      const checkedIndexes = [...document.querySelectorAll('.log-check:checked')].map(cb => parseInt(cb.dataset.logIndex));
+      if (checkedIndexes.length === 0) { alert('اختر عمليات أولاً'); return; }
+      log = checkedIndexes.map(i => fullLog[i]).filter(Boolean);
+    } else {
+      log = fullLog;
+    }
+
+    const BOM = '\uFEFF';
+    const headers = ['التاريخ', 'الوقت', 'رقم الأوردر', 'Order ID', 'المبلغ EGP', 'النتيجة', 'الخطأ'];
+    const rows = [headers.join(',')];
+    for (const entry of log) {
+      const d    = new Date(entry.date);
+      const date = d.toLocaleDateString('en-GB');
+      const time = d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
+      for (const o of entry.orders) {
+        rows.push([
+          date,
+          time,
+          o.orderName || '—',
+          `="${o.order}"`,
+          o.amount || '0.00',
+          o.status === 'success' ? 'ناجح' : 'فشل',
+          o.error ? `"${o.error}"` : '',
+        ].join(','));
+      }
+    }
+    const blob = new Blob([BOM + rows.join('\n')], { type: 'text/csv;charset=utf-8;' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href = url;
+    a.download = `cod-payment-log-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  // Init log on load
+  renderLog();
+  if (hasLogWorker()) syncFromCloud();
+
   function showToast(msg, type = 'scan') {
     const toast = document.getElementById('toast');
     toast.textContent = msg;
@@ -771,6 +1059,7 @@
     toast.classList.add('show');
     setTimeout(() => toast.classList.remove('show'), 1200);
   }
+
 </script>
 </body>
 </html>
