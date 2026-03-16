@@ -299,15 +299,15 @@
     </div>
     <div class="stat-chip cyan">
       <span class="stat-val" id="statSubtotal">—</span>
-      <span class="stat-lbl">فرعي EGP</span>
+      <span class="stat-lbl">تحصيل المندوب</span>
     </div>
     <div class="stat-chip dim">
       <span class="stat-val" id="statShipping">—</span>
-      <span class="stat-lbl">شحن EGP</span>
+      <span class="stat-lbl">شحن</span>
     </div>
     <div class="stat-chip gold">
       <span class="stat-val" id="statTotal">—</span>
-      <span class="stat-lbl">إجمالي EGP</span>
+      <span class="stat-lbl">إجمالي شوبيفاي</span>
     </div>
     <div class="stat-chip green">
       <span class="stat-val" id="statDone">0</span>
@@ -359,9 +359,9 @@
           <th class="col-del"></th>
           <th class="col-num">رقم الأوردر</th>
           <th class="col-courier">المندوب</th>
-          <th class="col-money">فرعي</th>
+          <th class="col-money">تحصيل المندوب</th>
           <th class="col-money">شحن</th>
-          <th class="col-money">الإجمالي</th>
+          <th class="col-money">إجمالي شوبيفاي</th>
           <th class="col-status">Payment Status</th>
           <th class="col-status">الحالة</th>
         </tr>
@@ -681,7 +681,7 @@
     saveLogEntry(logEntry);
 
     if (successCount > 0 && failCount === 0) {
-      showResult(true, `✅ تم تسجيل التحصيل بنجاح لـ ${successCount} أوردر`, `الإجمالي: ${fmt(paidTotal)} EGP`);
+      showResult(true, `✅ تم تسجيل التحصيل بنجاح لـ ${successCount} أوردر`, `الإجمالي: ${fmt(paidTotal)}`);
     } else if (successCount > 0) {
       showResult(true, `✅ ${successCount} نجح  ⚠️ ${failCount} فشل`, 'راجع الجدول للتفاصيل');
     } else {
@@ -715,6 +715,10 @@
         if (val < 0) color = 'var(--error)';
         return `<span style="color:${color}">${fmt(val)}</span>`;
       }
+      // courier cell computed value (المندوب column) = outstanding - shipping
+      const courierCollect = (o.amount != null && o.shippingAmount != null)
+        ? o.amount - o.shippingAmount
+        : null;
 
       // Badge
       let badge;
@@ -739,7 +743,7 @@
         <td style="padding:0.4rem 0.3rem;text-align:center"><button class="row-delete-btn" onclick="deleteOrder(${i})" title="حذف">🗑</button></td>
         <td class="order-num-cell" onclick="${hasDetails?`toggleRow(${i})`:''}" style="${hasDetails?'cursor:pointer':'cursor:default'}">${expandIcon}${nameDisplay}</td>
         <td class="courier-cell">${courierDisplay}</td>
-        <td class="money-cell">${moneyCell(o.subtotal, true)}</td>
+        <td class="money-cell">${moneyCell(courierCollect, false)}</td>
         <td class="money-cell">${moneyCell(o.shippingAmount, true)}</td>
         <td class="money-cell">${moneyCell(o.amount, false)}</td>
         <td class="financial-cell">${finLabel}</td>
@@ -797,12 +801,15 @@
     const done  = orders.filter(o => o.status === 'done');
     const active = [...ready, ...done];
 
-    const sumTotal    = active.reduce((s, o) => s + (o.amount        || 0), 0);
-    const sumSubtotal = active.reduce((s, o) => s + (o.subtotal      || 0), 0);
-    const sumShipping = active.reduce((s, o) => s + (o.shippingAmount || 0), 0);
+    const sumTotal          = active.reduce((s, o) => s + (o.amount        || 0), 0);
+    const sumShipping       = active.reduce((s, o) => s + (o.shippingAmount || 0), 0);
+    const sumCourierCollect = active.reduce((s, o) => {
+      const cc = (o.amount != null && o.shippingAmount != null) ? o.amount - o.shippingAmount : 0;
+      return s + cc;
+    }, 0);
 
     $('statCount').textContent    = orders.length;
-    $('statSubtotal').textContent = sumSubtotal > 0 ? fmt(sumSubtotal) : '—';
+    $('statSubtotal').textContent = sumCourierCollect !== 0 ? fmt(sumCourierCollect) : '—';
     $('statShipping').textContent = sumShipping > 0 ? fmt(sumShipping) : '—';
     $('statTotal').textContent    = sumTotal    > 0 ? fmt(sumTotal)    : '—';
     $('statDone').textContent     = done.length;
@@ -910,7 +917,7 @@
             <div class="log-entry-summary">
               <span class="log-tag tag-payment">💵 تحصيل COD</span>
               <span class="log-tag tag-count">${entry.totalOrders} أوردر</span>
-              ${entry.totalAmount ? `<span class="log-tag tag-payment">${parseFloat(entry.totalAmount).toLocaleString('en-US',{minimumFractionDigits:2})} EGP</span>` : ''}
+              ${entry.totalAmount ? `<span class="log-tag tag-payment">${parseFloat(entry.totalAmount).toLocaleString('en-US',{minimumFractionDigits:2})}</span>` : ''}
             </div>
           </div>
           <div class="log-entry-stats">
@@ -948,7 +955,7 @@
               <div class="log-detail-item">
                 <div class="log-detail-main" onclick="${hasSub ? 'toggleLogDetailItem(this)' : ''}">
                   <span class="log-detail-order">${o.orderName || ''} <span style="color:var(--text-dim);font-size:0.7rem">${o.order}</span>${o.courier ? ` <span style="color:#ec4899;font-size:0.72rem;font-weight:600">${o.courier}</span>` : ''}</span>
-                  <span class="log-detail-amount">${o.amount ? o.amount + ' EGP' : ''}</span>
+                  <span class="log-detail-amount">${o.amount ? o.amount : ''}</span>
                   <span class="log-detail-status log-detail-${o.status}">${o.status === 'success' ? '✓ ناجح' : '✗ فشل'}</span>
                   ${hasSub ? '<span style="color:var(--text-dim);font-size:0.7rem;margin-right:0.3rem">▶</span>' : ''}
                 </div>
@@ -979,7 +986,7 @@
     }
 
     const BOM = '\uFEFF';
-    const headers = ['التاريخ', 'الوقت', 'المندوب', 'رقم الأوردر', 'Order ID', 'فرعي EGP', 'شحن EGP', 'الإجمالي EGP', 'SKU', 'الكمية', 'سعر الوحدة EGP', 'إجمالي السطر EGP', 'النتيجة', 'الخطأ'];
+    const headers = ['التاريخ', 'الوقت', 'المندوب', 'رقم الأوردر', 'Order ID', 'تحصيل المندوب', 'شحن', 'إجمالي شوبيفاي', 'SKU', 'الكمية', 'سعر الوحدة', 'إجمالي السطر', 'النتيجة', 'الخطأ'];
     const rows = [headers.join(',')];
 
     for (const entry of log) {
@@ -988,13 +995,16 @@
       const time = d.toLocaleTimeString('en-GB', { hour:'2-digit', minute:'2-digit', second:'2-digit', hour12: false });
 
       for (const o of entry.orders) {
+        const cc = (o.amount && o.shippingAmount)
+          ? (parseFloat(o.amount) - parseFloat(o.shippingAmount)).toFixed(2)
+          : '0.00';
         const baseFields = [
           date,
           time,
           o.courier        || '—',
           o.orderName      || '—',
           `="${o.order}"`,
-          o.subtotal       || '0.00',
+          cc,
           o.shippingAmount || '0.00',
           o.amount         || '0.00',
         ];
