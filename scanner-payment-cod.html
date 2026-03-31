@@ -1208,6 +1208,7 @@
   }
 
   // ── CSV Export ────────────────────────────────────────────────────
+  // Columns: التاريخ | المندوب | رقم الأوردر | SKU | الكمية | سعر الوحدة | شحن | تحصيل المندوب | النتيجة | الخطأ
   function exportLogCSV(selectedOnly) {
     const fullLog = getLog();
     if (!fullLog.length) { alert('السجل فارغ'); return; }
@@ -1222,86 +1223,90 @@
     }
 
     const BOM = '\uFEFF';
-    const headers = ['التاريخ', 'الوقت', 'المندوب', 'رقم الأوردر', 'Order ID', 'تحصيل المندوب', 'شحن', 'إجمالي شوبيفاي', 'SKU', 'الكمية', 'سعر الوحدة', 'إجمالي السطر', 'النتيجة', 'الخطأ'];
+    // 10 columns
+    const headers = ['التاريخ', 'المندوب', 'رقم الأوردر', 'SKU', 'الكمية', 'سعر الوحدة', 'شحن', 'تحصيل المندوب', 'النتيجة', 'الخطأ'];
+    const COL_COUNT = headers.length;
     const rows = [headers.join(',')];
+
+    function emptyRow() { return Array(COL_COUNT).fill('').join(','); }
 
     for (const entry of log) {
       const d    = new Date(entry.date);
       const date = d.toLocaleDateString('en-GB');
-      const time = d.toLocaleTimeString('en-GB', { hour:'2-digit', minute:'2-digit', second:'2-digit', hour12: false });
+      const courier = entry.courier || '—';
 
       for (const o of entry.orders) {
         const cc = (o.amount && o.shippingAmount)
           ? (parseFloat(o.amount) - parseFloat(o.shippingAmount)).toFixed(2)
           : '0.00';
-        const baseFields = [
-          date,
-          time,
-          o.courier        || '—',
-          o.orderName      || '—',
-          `="${o.order}"`,
-          cc,
-          o.shippingAmount || '0.00',
-          o.amount         || '0.00',
-        ];
-        const resultFields = [
-          o.status === 'success' ? 'ناجح' : 'فشل',
-          o.error ? `"${o.error}"` : '',
-        ];
+        const shipping  = o.shippingAmount || '0.00';
+        const result    = o.status === 'success' ? 'ناجح' : 'فشل';
+        const errorTxt  = o.error ? `"${o.error}"` : '';
 
         if (o.lineItems && o.lineItems.length > 0) {
-          const emptyBase   = baseFields.map(() => '');
-          const emptyResult = resultFields.map(() => '');
           o.lineItems.forEach((li, idx) => {
             const isFirst = idx === 0;
             rows.push([
-              ...(isFirst ? baseFields   : emptyBase),
-              `"${li.sku}"`,
-              li.quantity,
-              li.unitPrice  || '0.00',
-              li.totalPrice || '0.00',
-              ...(isFirst ? resultFields : emptyResult),
+              isFirst ? date         : '',           // التاريخ
+              isFirst ? courier      : '',           // المندوب
+              isFirst ? (o.orderName || '—') : '',  // رقم الأوردر
+              `"${li.sku}"`,                        // SKU
+              li.quantity,                          // الكمية
+              li.unitPrice || '0.00',               // سعر الوحدة
+              isFirst ? shipping     : '',           // شحن
+              isFirst ? cc           : '',           // تحصيل المندوب
+              isFirst ? result       : '',           // النتيجة
+              isFirst ? errorTxt     : '',           // الخطأ
             ].join(','));
           });
         } else {
-          rows.push([...baseFields, '', '', '', '', ...resultFields].join(','));
+          rows.push([
+            date,
+            courier,
+            o.orderName || '—',
+            '',          // SKU
+            '',          // الكمية
+            '',          // سعر الوحدة
+            shipping,
+            cc,
+            result,
+            errorTxt,
+          ].join(','));
         }
       }
 
-      // ── Summary row for payment methods ────────────────────────
-      const pm = entry.paymentMethods || {};
+      // ── Payment methods summary rows ────────────────────────────
+      const pm       = entry.paymentMethods || {};
       const cash     = parseFloat(pm.cash)     || 0;
       const instapay = parseFloat(pm.instapay) || 0;
       const wallet   = parseFloat(pm.wallet)   || 0;
       const pmTotal  = cash + instapay + wallet;
 
-      if (pmTotal > 0) {
-        // Empty row for spacing
-        rows.push(Array(headers.length).fill('').join(','));
+      // Empty separator row
+      rows.push(emptyRow());
 
-        // Summary header row
+      // 4 summary rows: الإجمالي / محفظة / انستاباي / نقدي
+      // columns: التاريخ | المندوب | رقم الأوردر=label | SKU | الكمية | سعر الوحدة | شحن | تحصيل المندوب=value | النتيجة | الخطأ
+      const summaryRows = [
+        { label: 'الإجمالي',  value: pmTotal  },
+        { label: 'محفظة',     value: wallet   },
+        { label: 'انستاباي',  value: instapay },
+        { label: 'نقدي',      value: cash     },
+      ];
+      summaryRows.forEach(sr => {
         rows.push([
-          date, time,
-          entry.courier || '—',
-          `"ملخص طرق الدفع"`,
-          '', '', '', '',
-          '', '', '', '',
+          date,
+          courier,
+          `"${sr.label}"`,  // رقم الأوردر column used as label
+          '', '', '',        // SKU / الكمية / سعر الوحدة
+          '',                // شحن
+          sr.value.toFixed(2), // تحصيل المندوب column used as value
           '', '',
         ].join(','));
+      });
 
-        // Payment method details row
-        rows.push([
-          '', '',
-          '', '',
-          '', '', '', '',
-          '', '', '', '',
-          `"نقدي: ${fmt(cash)} | انستاباي: ${fmt(instapay)} | محفظة: ${fmt(wallet)} | الإجمالي: ${fmt(pmTotal)}"`,
-          '',
-        ].join(','));
-
-        // Another empty row for spacing between entries
-        rows.push(Array(headers.length).fill('').join(','));
-      }
+      // Empty row between entries
+      rows.push(emptyRow());
     }
 
     const blob = new Blob([BOM + rows.join('\n')], { type: 'text/csv;charset=utf-8;' });
