@@ -664,7 +664,18 @@
   function refocus() { scannerInput.focus(); }
   window.addEventListener('load', refocus);
   document.addEventListener('click', e => {
-    if (e.target.tagName !== 'INPUT' && e.target.tagName !== 'BUTTON') setTimeout(refocus, 50);
+    const noRefocusSelectors = [
+      '.log-section',
+      '.settings-content',
+      '.settings-toggle',
+      '.payment-methods-card',
+      '.orders-table-wrap',
+      '.result-box',
+    ];
+    const blocked = noRefocusSelectors.some(sel => e.target.closest(sel));
+    if (!blocked && e.target.tagName !== 'INPUT' && e.target.tagName !== 'BUTTON') {
+      setTimeout(refocus, 50);
+    }
   });
 
   // Manual input Enter key
