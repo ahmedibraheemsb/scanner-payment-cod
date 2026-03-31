@@ -101,6 +101,18 @@
   .payment-methods-card { display: none; margin-bottom: 1rem; }
   .payment-methods-card.visible { display: block; }
 
+  /* ── Extra shipping deduction ── */
+  .extra-shipping-wrap { display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.75rem; padding: 0.6rem 0.75rem; background: rgba(239,68,68,0.06); border: 1px solid rgba(239,68,68,0.2); border-radius: 10px; }
+  .extra-shipping-label { font-size: 0.78rem; color: var(--error); font-weight: 600; white-space: nowrap; flex-shrink: 0; }
+  .extra-shipping-input {
+    flex: 1; background: transparent; border: none; border-bottom: 1px solid rgba(239,68,68,0.35);
+    color: var(--error); font-family: 'JetBrains Mono', monospace; font-size: 0.95rem; font-weight: 700;
+    outline: none; padding: 0.15rem 0; direction: ltr; transition: border-color 0.2s; text-align: left; min-width: 0;
+  }
+  .extra-shipping-input:focus { border-bottom-color: var(--error); }
+  .extra-shipping-input::placeholder { color: rgba(239,68,68,0.35); font-size: 0.82rem; font-weight: 400; }
+  .extra-shipping-net { font-family: 'JetBrains Mono', monospace; font-size: 0.82rem; font-weight: 700; color: var(--scanner); white-space: nowrap; flex-shrink: 0; direction: ltr; }
+
   .courier-banner {
     display: flex; align-items: center; gap: 0.5rem;
     background: rgba(236,72,153,0.08); border: 1px solid rgba(236,72,153,0.25);
@@ -383,6 +395,13 @@
       <span class="courier-banner-total" id="courierBannerTotal">—</span>
     </div>
 
+    <!-- Extra shipping deduction -->
+    <div class="extra-shipping-wrap">
+      <span class="extra-shipping-label">🚚 مصاريف شحن إضافية</span>
+      <input type="number" id="pmExtraShipping" class="extra-shipping-input" placeholder="0.00" min="0" step="0.01" oninput="updatePayValidation()">
+      <span class="extra-shipping-net" id="extraShippingNet"></span>
+    </div>
+
     <div class="pay-methods-grid">
       <div class="pay-method-item">
         <div class="pay-method-label">💵 نقدي</div>
@@ -518,6 +537,15 @@
     }, 0);
   }
 
+  function getExtraShipping() {
+    return parseFloat($('pmExtraShipping').value) || 0;
+  }
+
+  // The amount the courier actually hands over = collect total - extra shipping deduction
+  function getNetTarget() {
+    return Math.max(0, getCourierCollectTotal() - getExtraShipping());
+  }
+
   function getPayMethodsSum() {
     const cash     = parseFloat($('pmCash').value)     || 0;
     const instapay = parseFloat($('pmInstapay').value) || 0;
@@ -532,13 +560,23 @@
   function updatePayValidation() {
     const el       = $('payMethodsValidation');
     const textEl   = $('payValText');
-    const target   = getCourierCollectTotal();
+    const gross    = getCourierCollectTotal();
+    const extra    = getExtraShipping();
+    const target   = getNetTarget();
     const entered  = getPayMethodsSum();
     const empty    = isPayMethodsEmpty();
 
+    // Update net label next to extra shipping input
+    const netEl = $('extraShippingNet');
+    if (extra > 0) {
+      netEl.textContent = `← صافي: ${fmt(target)}`;
+    } else {
+      netEl.textContent = '';
+    }
+
     if (empty) {
       el.className = 'pay-methods-validation empty';
-      textEl.textContent = `أدخل طرق الدفع — المجموع يجب يساوي تحصيل المندوب (${fmt(target)})`;
+      textEl.textContent = `أدخل طرق الدفع — المجموع يجب يساوي ${fmt(target)}`;
     } else {
       const diff = Math.abs(entered - target);
       if (diff < 0.01) {
@@ -555,7 +593,7 @@
 
   function isPayMethodsValid() {
     if (isPayMethodsEmpty()) return false;
-    const target  = getCourierCollectTotal();
+    const target  = getNetTarget();
     const entered = getPayMethodsSum();
     return Math.abs(entered - target) < 0.01;
   }
@@ -608,7 +646,13 @@
     $('courierBannerName').style.color = courierErr ? 'var(--error)' : 'var(--pink)';
 
     const target = getCourierCollectTotal();
-    $('courierBannerTotal').textContent = `${fmt(target)} EGP`;
+    const extra  = getExtraShipping();
+    const net    = getNetTarget();
+    if (extra > 0) {
+      $('courierBannerTotal').textContent = `${fmt(target)} − ${fmt(extra)} = ${fmt(net)} EGP`;
+    } else {
+      $('courierBannerTotal').textContent = `${fmt(target)} EGP`;
+    }
 
     updatePayValidation();
   }
@@ -818,14 +862,32 @@
       return;
     }
 
-    const courierName = uniqueCouriers[0];
-    const total       = readyOrders.reduce((s, o) => s + o.amount, 0);
-    const cash        = parseFloat($('pmCash').value)     || 0;
-    const instapay    = parseFloat($('pmInstapay').value) || 0;
-    const wallet      = parseFloat($('pmWallet').value)   || 0;
+    const courierName         = uniqueCouriers[0];
+    const total               = readyOrders.reduce((s, o) => s + o.amount, 0);
+    const cash                = parseFloat($('pmCash').value)         || 0;
+    const instapay            = parseFloat($('pmInstapay').value)     || 0;
+    const wallet              = parseFloat($('pmWallet').value)       || 0;
+    const extraShipping       = getExtraShipping();
     const courierCollectTotal = getCourierCollectTotal();
+    const netTarget           = getNetTarget();
 
-    if (!confirm(`سيتم تسجيل التحصيل الكامل لعدد ${readyOrders.length} أوردر\nالمندوب: ${courierName}\nإجمالي شوبيفاي: ${fmt(total)} EGP\nتحصيل المندوب: ${fmt(courierCollectTotal)} EGP\n\nطرق الدفع:\nنقدي: ${fmt(cash)}\nانستاباي: ${fmt(instapay)}\nمحفظة: ${fmt(wallet)}\n\nمتأكد؟`)) return;
+    const confirmLines = [
+      `سيتم تسجيل التحصيل الكامل لعدد ${readyOrders.length} أوردر`,
+      `المندوب: ${courierName}`,
+      `إجمالي شوبيفاي: ${fmt(total)} EGP`,
+      `تحصيل المندوب: ${fmt(courierCollectTotal)} EGP`,
+      extraShipping > 0 ? `مصاريف شحن إضافية: ${fmt(extraShipping)} EGP` : null,
+      extraShipping > 0 ? `صافي التحصيل: ${fmt(netTarget)} EGP` : null,
+      ``,
+      `طرق الدفع:`,
+      `نقدي: ${fmt(cash)}`,
+      `انستاباي: ${fmt(instapay)}`,
+      `محفظة: ${fmt(wallet)}`,
+      ``,
+      `متأكد؟`,
+    ].filter(l => l !== null).join('\n');
+
+    if (!confirm(confirmLines)) return;
 
     const workerUrl    = $('workerUrl').value.trim();
     const workerSecret = $('workerSecret').value.trim();
@@ -873,6 +935,8 @@
       errors: failCount,
       totalAmount: paidTotal.toFixed(2),
       courierCollect: paidCourierCollect.toFixed(2),
+      extraShipping: extraShipping.toFixed(2),
+      netCollect: Math.max(0, paidCourierCollect - extraShipping).toFixed(2),
       paymentMethods: {
         cash:     cash.toFixed(2),
         instapay: instapay.toFixed(2),
@@ -905,6 +969,7 @@
       $('pmCash').value = '';
       $('pmInstapay').value = '';
       $('pmWallet').value = '';
+      $('pmExtraShipping').value = '';
       updatePayValidation();
     }
 
@@ -1276,31 +1341,36 @@
       }
 
       // ── Payment methods summary rows ────────────────────────────
-      const pm       = entry.paymentMethods || {};
-      const cash     = parseFloat(pm.cash)     || 0;
-      const instapay = parseFloat(pm.instapay) || 0;
-      const wallet   = parseFloat(pm.wallet)   || 0;
-      const pmTotal  = cash + instapay + wallet;
+      const pm           = entry.paymentMethods || {};
+      const cash         = parseFloat(pm.cash)         || 0;
+      const instapay     = parseFloat(pm.instapay)     || 0;
+      const wallet       = parseFloat(pm.wallet)       || 0;
+      const pmTotal      = cash + instapay + wallet;
+      const extraShip    = parseFloat(entry.extraShipping) || 0;
+      const grossCollect = parseFloat(entry.courierCollect) || pmTotal + extraShip;
 
       // Empty separator row
       rows.push(emptyRow());
 
-      // 4 summary rows: الإجمالي / محفظة / انستاباي / نقدي
-      // columns: التاريخ | المندوب | رقم الأوردر=label | SKU | الكمية | سعر الوحدة | شحن | تحصيل المندوب=value | النتيجة | الخطأ
+      // Summary rows: الإجمالي (gross) / مصاريف شحن إضافية / صافي التحصيل / محفظة / انستاباي / نقدي
       const summaryRows = [
-        { label: 'الإجمالي',  value: pmTotal  },
-        { label: 'محفظة',     value: wallet   },
-        { label: 'انستاباي',  value: instapay },
-        { label: 'نقدي',      value: cash     },
+        { label: 'إجمالي التحصيل', value: grossCollect },
+        ...(extraShip > 0 ? [
+          { label: 'مصاريف شحن إضافية', value: -extraShip },
+          { label: 'صافي التحصيل',      value: Math.max(0, grossCollect - extraShip) },
+        ] : []),
+        { label: 'محفظة',    value: wallet   },
+        { label: 'انستاباي', value: instapay },
+        { label: 'نقدي',     value: cash     },
       ];
       summaryRows.forEach(sr => {
         rows.push([
           date,
           courier,
-          `"${sr.label}"`,  // رقم الأوردر column used as label
-          '', '', '',        // SKU / الكمية / سعر الوحدة
-          '',                // شحن
-          sr.value.toFixed(2), // تحصيل المندوب column used as value
+          `"${sr.label}"`,
+          '', '', '',
+          '',
+          sr.value.toFixed(2),
           '', '',
         ].join(','));
       });
