@@ -25,6 +25,8 @@
     --scanner: #00d4ff;
     --scanner-glow: rgba(0,212,255,0.12);
     --pink: #ec4899;
+    --purple: #a855f7;
+    --purple-glow: rgba(168,85,247,0.12);
   }
 
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -216,6 +218,8 @@
   .badge-scanning  { background: rgba(0,212,255,0.15);  color: var(--scanner); border: 1px solid rgba(0,212,255,0.3); }
   .badge-loading   { background: rgba(59,130,246,0.15); color: var(--blue);    border: 1px solid rgba(59,130,246,0.3); }
   .badge-ready     { background: rgba(245,158,11,0.12); color: var(--gold);    border: 1px solid rgba(245,158,11,0.25); }
+  /* ↓ pre-registered orders show differently in "ready" state */
+  .badge-prereg    { background: rgba(168,85,247,0.12); color: var(--purple);  border: 1px solid rgba(168,85,247,0.3); }
   .badge-done      { background: var(--success-glow);   color: var(--success); border: 1px solid rgba(34,197,94,0.3); }
   .badge-paid-full { background: var(--success-glow);   color: var(--success); border: 1px solid rgba(34,197,94,0.3); }
   .badge-refund    { background: var(--error-glow);     color: var(--error);   border: 1px solid rgba(239,68,68,0.3); }
@@ -263,6 +267,9 @@
   .log-list { max-height: 420px; overflow-y: auto; }
   .log-entry { background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; margin-bottom: 0.5rem; overflow: hidden; transition: border-color 0.2s; }
   .log-entry:hover { border-color: var(--text-dim); }
+  /* pre-register entries get purple border */
+  .log-entry.type-prereg { border-color: rgba(168,85,247,0.3); }
+  .log-entry.type-prereg:hover { border-color: var(--purple); }
   .log-entry-header { display: flex; justify-content: space-between; align-items: center; padding: 0.7rem 0.85rem; cursor: pointer; gap: 0.5rem; }
   .log-entry-info { flex: 1; min-width: 0; }
   .log-entry-date { font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: var(--text-dim); margin-bottom: 0.25rem; }
@@ -271,6 +278,7 @@
   .log-tag.tag-payment { background: rgba(245,158,11,0.15); color: var(--gold); }
   .log-tag.tag-count   { background: rgba(59,130,246,0.12); color: var(--blue); }
   .log-tag.tag-courier { background: rgba(236,72,153,0.12); color: var(--pink); }
+  .log-tag.tag-prereg  { background: rgba(168,85,247,0.15); color: var(--purple); }
   .log-entry-stats { display: flex; gap: 0.4rem; font-size: 0.75rem; flex-shrink: 0; }
   .stat-success { color: var(--success); font-family: 'JetBrains Mono', monospace; font-weight: 700; }
   .stat-error   { color: var(--error);   font-family: 'JetBrains Mono', monospace; font-weight: 700; }
@@ -318,6 +326,9 @@
   .log-sync-status.synced  { color: var(--success); background: var(--success-glow); }
   .log-sync-status.local   { color: var(--gold);    background: var(--gold-glow); }
   .log-sync-status.loading { color: var(--scanner); background: var(--scanner-glow); }
+
+  /* pre-registered flag in log detail */
+  .prereg-flag { font-size: 0.65rem; padding: 0.1rem 0.35rem; border-radius: 4px; background: rgba(168,85,247,0.12); color: var(--purple); border: 1px solid rgba(168,85,247,0.25); margin-right: 0.3rem; font-weight: 600; }
 </style>
 </head>
 <body>
@@ -537,20 +548,13 @@
     }, 0);
   }
 
-  function getExtraShipping() {
-    return parseFloat($('pmExtraShipping').value) || 0;
-  }
-
-  // The amount the courier actually hands over = collect total - extra shipping deduction
-  function getNetTarget() {
-    return Math.max(0, getCourierCollectTotal() - getExtraShipping());
-  }
+  function getExtraShipping() { return parseFloat($('pmExtraShipping').value) || 0; }
+  function getNetTarget()     { return Math.max(0, getCourierCollectTotal() - getExtraShipping()); }
 
   function getPayMethodsSum() {
-    const cash     = parseFloat($('pmCash').value)     || 0;
-    const instapay = parseFloat($('pmInstapay').value) || 0;
-    const wallet   = parseFloat($('pmWallet').value)   || 0;
-    return cash + instapay + wallet;
+    return (parseFloat($('pmCash').value) || 0) +
+           (parseFloat($('pmInstapay').value) || 0) +
+           (parseFloat($('pmWallet').value) || 0);
   }
 
   function isPayMethodsEmpty() {
@@ -558,21 +562,15 @@
   }
 
   function updatePayValidation() {
-    const el       = $('payMethodsValidation');
-    const textEl   = $('payValText');
-    const gross    = getCourierCollectTotal();
-    const extra    = getExtraShipping();
-    const target   = getNetTarget();
-    const entered  = getPayMethodsSum();
-    const empty    = isPayMethodsEmpty();
+    const el      = $('payMethodsValidation');
+    const textEl  = $('payValText');
+    const extra   = getExtraShipping();
+    const target  = getNetTarget();
+    const entered = getPayMethodsSum();
+    const empty   = isPayMethodsEmpty();
 
-    // Update net label next to extra shipping input
     const netEl = $('extraShippingNet');
-    if (extra > 0) {
-      netEl.textContent = `← صافي: ${fmt(target)}`;
-    } else {
-      netEl.textContent = '';
-    }
+    netEl.textContent = extra > 0 ? `← صافي: ${fmt(target)}` : '';
 
     if (empty) {
       el.className = 'pay-methods-validation empty';
@@ -593,53 +591,37 @@
 
   function isPayMethodsValid() {
     if (isPayMethodsEmpty()) return false;
-    const target  = getNetTarget();
-    const entered = getPayMethodsSum();
-    return Math.abs(entered - target) < 0.01;
+    return Math.abs(getPayMethodsSum() - getNetTarget()) < 0.01;
   }
 
-  // ── Get unique courier from ready orders ──────────────────────────
   function getReadyCourier() {
     const readyOrders = orders.filter(o => o.status === 'ready');
     if (!readyOrders.length) return null;
     const couriers = [...new Set(readyOrders.map(o => o.courier).filter(Boolean))];
-    if (couriers.length === 1) return couriers[0];
-    return null; // 0 = no courier, 2+ = multiple
+    return couriers.length === 1 ? couriers[0] : null;
   }
 
   function getReadyCourierErrors() {
     const readyOrders = orders.filter(o => o.status === 'ready');
     if (!readyOrders.length) return null;
-
-    // Check for orders with no courier
     const noCourier = readyOrders.filter(o => !o.courier);
     if (noCourier.length > 0) {
       const names = noCourier.map(o => o.orderName || o.id).join('، ');
       return `الأوردرات التالية بدون مندوب: ${names}`;
     }
-
-    // Check for multiple couriers
     const couriers = [...new Set(readyOrders.map(o => o.courier))];
     if (couriers.length > 1) {
       return `يوجد أكثر من مندوب في الأوردرات: ${couriers.join('، ')} — يجب أن تكون كل الأوردرات لمندوب واحد فقط`;
     }
-
-    return null; // all good
+    return null;
   }
 
-  // ── Update Payment Methods Card visibility ────────────────────────
   function updatePaymentMethodsCard() {
     const readyOrders = orders.filter(o => o.status === 'ready');
     const card = $('paymentMethodsCard');
-
-    if (readyOrders.length === 0) {
-      card.classList.remove('visible');
-      return;
-    }
-
+    if (readyOrders.length === 0) { card.classList.remove('visible'); return; }
     card.classList.add('visible');
 
-    // Update courier banner
     const courier    = getReadyCourier();
     const courierErr = getReadyCourierErrors();
     $('courierBannerName').textContent = courierErr ? '⚠️ خطأ في المندوب' : (courier || '—');
@@ -648,11 +630,9 @@
     const target = getCourierCollectTotal();
     const extra  = getExtraShipping();
     const net    = getNetTarget();
-    if (extra > 0) {
-      $('courierBannerTotal').textContent = `${fmt(target)} − ${fmt(extra)} = ${fmt(net)} EGP`;
-    } else {
-      $('courierBannerTotal').textContent = `${fmt(target)} EGP`;
-    }
+    $('courierBannerTotal').textContent = extra > 0
+      ? `${fmt(target)} − ${fmt(extra)} = ${fmt(net)} EGP`
+      : `${fmt(target)} EGP`;
 
     updatePayValidation();
   }
@@ -665,12 +645,8 @@
   window.addEventListener('load', refocus);
   document.addEventListener('click', e => {
     const noRefocusSelectors = [
-      '.log-section',
-      '.settings-content',
-      '.settings-toggle',
-      '.payment-methods-card',
-      '.orders-table-wrap',
-      '.result-box',
+      '.log-section', '.settings-content', '.settings-toggle',
+      '.payment-methods-card', '.orders-table-wrap', '.result-box',
     ];
     const blocked = noRefocusSelectors.some(sel => e.target.closest(sel));
     if (!blocked && e.target.tagName !== 'INPUT' && e.target.tagName !== 'BUTTON') {
@@ -678,7 +654,6 @@
     }
   });
 
-  // Manual input Enter key
   $('manualInput').addEventListener('keypress', e => {
     if (e.key === 'Enter') { e.preventDefault(); handleManualAdd(); }
   });
@@ -713,7 +688,8 @@
       id: raw, orderName: null,
       amount: null, subtotal: null, shippingAmount: null,
       canMarkAsPaid: null, skipReason: null, financialStatus: null,
-      courier: null, lineItems: [], status: 'scanning', error: null
+      courier: null, lineItems: [], status: 'scanning', error: null,
+      preRegistered: false,
     };
     orders.unshift(order);
     showTable(); updateStats(); renderTable();
@@ -728,16 +704,17 @@
       const data = await res.json();
 
       if (data.success) {
-        order.orderName      = data.orderName;
-        order.amount         = parseFloat(data.amount);
-        order.subtotal       = parseFloat(data.subtotal);
-        order.shippingAmount = parseFloat(data.shippingAmount);
-        order.canMarkAsPaid  = data.canMarkAsPaid;
-        order.skipReason     = data.skipReason || null;
+        order.orderName       = data.orderName;
+        order.amount          = parseFloat(data.amount);
+        order.subtotal        = parseFloat(data.subtotal);
+        order.shippingAmount  = parseFloat(data.shippingAmount);
+        order.canMarkAsPaid   = data.canMarkAsPaid;
+        order.skipReason      = data.skipReason || null;
         order.financialStatus = data.financialStatus || null;
-        order.courier        = data.courier || null;
-        order.lineItems      = data.lineItems || [];
-        order.status         = data.canMarkAsPaid ? 'ready' : 'skipped';
+        order.courier         = data.courier || null;
+        order.lineItems       = data.lineItems || [];
+        order.preRegistered   = data.preRegistered || false;  // ← pre-reg flag
+        order.status          = data.canMarkAsPaid ? 'ready' : 'skipped';
       } else if (data.notFound) {
         order.status = 'notfound';
       } else {
@@ -750,7 +727,6 @@
     updateStats(); renderTable(); updatePayBtn(); updatePaymentMethodsCard(); refocus();
   }
 
-  // ── Manual add by order number ─────────────────────────────────
   async function handleManualAdd() {
     const input = $('manualInput');
     const raw   = input.value.trim().replace(/^#/, '');
@@ -798,7 +774,8 @@
         id: orderId, orderName: null,
         amount: null, subtotal: null, shippingAmount: null,
         canMarkAsPaid: null, skipReason: null, financialStatus: null,
-        courier: null, lineItems: [], status: 'scanning', error: null
+        courier: null, lineItems: [], status: 'scanning', error: null,
+        preRegistered: false,
       };
       orders.unshift(order);
       showTable(); updateStats(); renderTable();
@@ -821,6 +798,7 @@
         order.financialStatus = d2.financialStatus || null;
         order.courier         = d2.courier || null;
         order.lineItems       = d2.lineItems || [];
+        order.preRegistered   = d2.preRegistered || false;  // ← pre-reg flag
         order.status          = d2.canMarkAsPaid ? 'ready' : 'skipped';
       } else {
         order.status = 'error'; order.error = d2.error || 'خطأ';
@@ -836,7 +814,6 @@
     input.disabled = false; input.value = ''; input.focus();
   }
 
-  // ── Delete single order ─────────────────────────────────────────
   function deleteOrder(idx) {
     orders.splice(idx, 1);
     if (orders.length === 0) {
@@ -852,7 +829,6 @@
     const readyOrders = orders.filter(o => o.status === 'ready');
     if (!readyOrders.length) return;
 
-    // Validation 1: all ready orders must have a courier
     const noCourierOrders = readyOrders.filter(o => !o.courier);
     if (noCourierOrders.length > 0) {
       const names = noCourierOrders.map(o => o.orderName || o.id).join('، ');
@@ -860,14 +836,12 @@
       return;
     }
 
-    // Validation 2: only one courier allowed
     const uniqueCouriers = [...new Set(readyOrders.map(o => o.courier))];
     if (uniqueCouriers.length > 1) {
       showResult(false, '⚠️ أكثر من مندوب في نفس العملية', `يوجد ${uniqueCouriers.length} مندوبين: ${uniqueCouriers.join('، ')} — سجّل كل مندوب بشكل منفصل`);
       return;
     }
 
-    // Validation 3: payment methods must be filled and match
     if (!isPayMethodsValid()) {
       showResult(false, '⚠️ طريقة الدفع غير مكتملة', 'المجموع الكلي لطرق الدفع يجب يساوي تحصيل المندوب');
       return;
@@ -882,8 +856,12 @@
     const courierCollectTotal = getCourierCollectTotal();
     const netTarget           = getNetTarget();
 
+    // Count pre-registered orders in batch
+    const preregCount = readyOrders.filter(o => o.preRegistered).length;
+
     const confirmLines = [
       `سيتم تسجيل التحصيل الكامل لعدد ${readyOrders.length} أوردر`,
+      preregCount > 0 ? `(منهم ${preregCount} مسجل مسبقاً — بدون transaction جديد على شوبيفاي)` : null,
       `المندوب: ${courierName}`,
       `إجمالي شوبيفاي: ${fmt(total)} EGP`,
       `تحصيل المندوب: ${fmt(courierCollectTotal)} EGP`,
@@ -937,9 +915,9 @@
       return s + cc;
     }, 0);
 
-    // Save log with payment methods
     const logEntry = {
       date: new Date().toISOString(),
+      type: 'payment',
       courier: courierName,
       totalOrders: readyOrders.length,
       success: successCount,
@@ -954,15 +932,16 @@
         wallet:   wallet.toFixed(2),
       },
       orders: readyOrders.map(o => ({
-        order:         o.id,
-        orderName:     o.orderName || '',
-        courier:       o.courier || '',
-        amount:        o.amount        != null ? o.amount.toFixed(2)        : '0.00',
-        subtotal:      o.subtotal      != null ? o.subtotal.toFixed(2)      : '0.00',
+        order:          o.id,
+        orderName:      o.orderName || '',
+        courier:        o.courier || '',
+        amount:         o.amount        != null ? o.amount.toFixed(2)        : '0.00',
+        subtotal:       o.subtotal      != null ? o.subtotal.toFixed(2)      : '0.00',
         shippingAmount: o.shippingAmount != null ? o.shippingAmount.toFixed(2) : '0.00',
-        lineItems:     o.lineItems || [],
-        status:        o.status === 'done' ? 'success' : 'error',
-        error:         o.error || null,
+        lineItems:      o.lineItems || [],
+        preRegistered:  o.preRegistered || false,   // ← flag in log
+        status:         o.status === 'done' ? 'success' : 'error',
+        error:          o.error || null,
       })),
     };
     saveLogEntry(logEntry);
@@ -975,7 +954,6 @@
       showResult(false, 'فشل التحصيل لكل الأوردرات', 'راجع الجدول للتفاصيل');
     }
 
-    // Clear payment method inputs after successful batch
     if (successCount > 0) {
       $('pmCash').value = '';
       $('pmInstapay').value = '';
@@ -1013,13 +991,17 @@
       }
 
       const courierCollect = (o.amount != null && o.shippingAmount != null)
-        ? o.amount - o.shippingAmount
-        : null;
+        ? o.amount - o.shippingAmount : null;
 
       let badge;
       if      (o.status === 'scanning') badge = `<span class="badge badge-scanning"><span class="spinner"></span>مسح...</span>`;
       else if (o.status === 'loading')  badge = `<span class="badge badge-loading"><span class="spinner"></span>جاري...</span>`;
-      else if (o.status === 'ready')    badge = `<span class="badge badge-ready">جاهز</span>`;
+      else if (o.status === 'ready') {
+        // ↓ pre-registered orders get a different badge
+        badge = o.preRegistered
+          ? `<span class="badge badge-prereg">📋 مسجل مسبقاً</span>`
+          : `<span class="badge badge-ready">جاهز</span>`;
+      }
       else if (o.status === 'done')     badge = `<span class="badge badge-done">✓ تم التحصيل</span>`;
       else if (o.status === 'skipped') {
         if      (o.skipReason === 'مدفوع بالكامل') badge = `<span class="badge badge-paid-full">مدفوع بالكامل</span>`;
@@ -1032,8 +1014,8 @@
       const finLabel   = financialLabel(o.financialStatus);
       const hasDetails = o.lineItems && o.lineItems.length > 0;
       const expandIcon = hasDetails ? `<span class="expand-icon">▶</span>` : '';
-
       const courierDisplay = o.courier || '<span style="color:var(--text-dim)">—</span>';
+
       rows.push(`<tr class="order-row${i===0?' row-new':''}" data-idx="${i}">
         <td style="padding:0.4rem 0.3rem;text-align:center"><button class="row-delete-btn" onclick="deleteOrder(${i})" title="حذف">🗑</button></td>
         <td class="order-num-cell" onclick="${hasDetails?`toggleRow(${i})`:''}" style="${hasDetails?'cursor:pointer':'cursor:default'}">${expandIcon}${nameDisplay}</td>
@@ -1051,30 +1033,22 @@
           const unit  = parseFloat(li.unitPrice);
           const total = parseFloat(li.totalPrice);
           return `<tr>
-            <td class="td-sku">${li.sku}</td>
-            <td class="td-sep"></td>
-            <td class="td-qty">${li.quantity}</td>
-            <td class="td-sep"></td>
-            <td class="td-unit">${fmt(unit)}</td>
-            <td class="td-sep"></td>
+            <td class="td-sku">${li.sku}</td><td class="td-sep"></td>
+            <td class="td-qty">${li.quantity}</td><td class="td-sep"></td>
+            <td class="td-unit">${fmt(unit)}</td><td class="td-sep"></td>
             <td class="td-total">${fmt(total)}</td>
           </tr>`;
         }).join('');
         const skuHeader = `<thead><tr>
-          <th class="th-sku">SKU</th>
-          <th></th>
-          <th class="th-qty">Qty</th>
-          <th></th>
-          <th class="th-unit">Unit Price</th>
-          <th></th>
+          <th class="th-sku">SKU</th><th></th>
+          <th class="th-qty">Qty</th><th></th>
+          <th class="th-unit">Unit Price</th><th></th>
           <th class="th-total">Total</th>
         </tr></thead>`;
-
-        detailContent = `
-          <div class="detail-section">
-            <div class="detail-label">SKUs</div>
-            <table class="sku-table">${skuHeader}<tbody>${skuRows}</tbody></table>
-          </div>`;
+        detailContent = `<div class="detail-section">
+          <div class="detail-label">SKUs</div>
+          <table class="sku-table">${skuHeader}<tbody>${skuRows}</tbody></table>
+        </div>`;
       }
 
       rows.push(`<tr class="detail-row" data-idx="${i}">
@@ -1114,7 +1088,6 @@
     const hasReady    = readyOrders.length > 0;
     const courierErr  = getReadyCourierErrors();
     const payValid    = isPayMethodsValid();
-
     $('payBtn').disabled = !hasReady || !!courierErr || !payValid || isProcessing;
   }
 
@@ -1208,15 +1181,48 @@
     if (!log.length) { container.innerHTML = '<div class="log-empty">لا توجد عمليات مسجلة</div>'; return; }
 
     container.innerHTML = log.map((entry, i) => {
-      // Payment methods chips
+      const isPrereg = entry.type === 'preRegister';
+
+      if (isPrereg) {
+        // ── Pre-register entry (purple style) ──────────────────────
+        return `
+        <div class="log-entry type-prereg">
+          <div class="log-entry-header">
+            <input type="checkbox" class="log-check" data-log-index="${i}" onchange="onLogCheckChange()">
+            <div class="log-entry-info" onclick="toggleLogEntry(this)">
+              <div class="log-entry-date">${formatLogDate(entry.date)}</div>
+              <div class="log-entry-summary">
+                <span class="log-tag tag-prereg">📋 تسجيل مسبق</span>
+                <span class="log-tag tag-count">${entry.totalOrders} أوردر</span>
+                ${entry.totalAmount ? `<span class="log-tag tag-payment">${parseFloat(entry.totalAmount).toLocaleString('en-US',{minimumFractionDigits:2})}</span>` : ''}
+              </div>
+            </div>
+            <div class="log-entry-stats">
+              <span class="stat-success">✓${entry.success}</span>
+              <span class="stat-error">✗${entry.errors}</span>
+            </div>
+            <span class="log-toggle" onclick="toggleLogEntry(this)">▶</span>
+          </div>
+          <div class="log-entry-details">
+            ${entry.orders.map(o => `
+              <div class="log-detail-item">
+                <div class="log-detail-main">
+                  <span class="log-detail-order">${o.orderName || ''} <span style="color:var(--text-dim);font-size:0.7rem">${o.order}</span>${o.courier ? ` <span style="color:#ec4899;font-size:0.72rem;font-weight:600">${o.courier}</span>` : ''}</span>
+                  <span class="log-detail-amount">${o.amount || ''}</span>
+                  <span class="log-detail-status log-detail-${o.status}">${o.status === 'success' ? '✓ ناجح' : '✗ فشل'}</span>
+                </div>
+              </div>`).join('')}
+          </div>
+        </div>`;
+      }
+
+      // ── Normal payment entry ──────────────────────────────────────
       const pm = entry.paymentMethods || {};
       const pmChips = [];
       if (parseFloat(pm.cash)     > 0) pmChips.push(`<span class="log-pay-chip">💵 نقدي<span class="log-pay-chip-label">${fmt(pm.cash)}</span></span>`);
       if (parseFloat(pm.instapay) > 0) pmChips.push(`<span class="log-pay-chip">📱 انستاباي<span class="log-pay-chip-label">${fmt(pm.instapay)}</span></span>`);
       if (parseFloat(pm.wallet)   > 0) pmChips.push(`<span class="log-pay-chip">👛 محفظة<span class="log-pay-chip-label">${fmt(pm.wallet)}</span></span>`);
       const pmHtml = pmChips.length ? `<div class="log-pay-methods">${pmChips.join('')}</div>` : '';
-
-      // Courier name as label instead of "تحصيل COD"
       const courierLabel = entry.courier || 'تحصيل COD';
 
       return `
@@ -1249,12 +1255,9 @@
               </tr></thead>`;
             const skuRows = hasSkus
               ? o.lineItems.map(li => `<tr>
-                  <td class="td-sku">${li.sku}</td>
-                  <td class="td-sep"></td>
-                  <td class="td-qty">${li.quantity}</td>
-                  <td class="td-sep"></td>
-                  <td class="td-unit">${fmt(li.unitPrice)}</td>
-                  <td class="td-sep"></td>
+                  <td class="td-sku">${li.sku}</td><td class="td-sep"></td>
+                  <td class="td-qty">${li.quantity}</td><td class="td-sep"></td>
+                  <td class="td-unit">${fmt(li.unitPrice)}</td><td class="td-sep"></td>
                   <td class="td-total">${fmt(li.totalPrice)}</td>
                 </tr>`).join('')
               : '';
@@ -1263,10 +1266,14 @@
                  <div class="log-shipping-val">${fmt(o.shippingAmount)} EGP</div>`
               : '';
             const hasSub = hasSkus || shippingHtml;
+            // Pre-registered flag badge inside log detail
+            const preregBadge = o.preRegistered
+              ? `<span class="prereg-flag">📋 مسجل مسبقاً</span>`
+              : '';
             return `
               <div class="log-detail-item">
                 <div class="log-detail-main" onclick="${hasSub ? 'toggleLogDetailItem(this)' : ''}">
-                  <span class="log-detail-order">${o.orderName || ''} <span style="color:var(--text-dim);font-size:0.7rem">${o.order}</span>${o.courier ? ` <span style="color:#ec4899;font-size:0.72rem;font-weight:600">${o.courier}</span>` : ''}</span>
+                  <span class="log-detail-order">${preregBadge}${o.orderName || ''} <span style="color:var(--text-dim);font-size:0.7rem">${o.order}</span>${o.courier ? ` <span style="color:#ec4899;font-size:0.72rem;font-weight:600">${o.courier}</span>` : ''}</span>
                   <span class="log-detail-amount">${o.amount ? o.amount : ''}</span>
                   <span class="log-detail-status log-detail-${o.status}">${o.status === 'success' ? '✓ ناجح' : '✗ فشل'}</span>
                   ${hasSub ? '<span style="color:var(--text-dim);font-size:0.7rem;margin-right:0.3rem">▶</span>' : ''}
@@ -1284,7 +1291,6 @@
   }
 
   // ── CSV Export ────────────────────────────────────────────────────
-  // Columns: التاريخ | المندوب | رقم الأوردر | SKU | الكمية | سعر الوحدة | شحن | تحصيل المندوب | النتيجة | الخطأ
   function exportLogCSV(selectedOnly) {
     const fullLog = getLog();
     if (!fullLog.length) { alert('السجل فارغ'); return; }
@@ -1299,8 +1305,7 @@
     }
 
     const BOM = '\uFEFF';
-    // 10 columns
-    const headers = ['التاريخ', 'المندوب', 'رقم الأوردر', 'SKU', 'الكمية', 'سعر الوحدة', 'شحن', 'تحصيل المندوب', 'النتيجة', 'الخطأ'];
+    const headers = ['التاريخ', 'المندوب', 'رقم الأوردر', 'SKU', 'الكمية', 'سعر الوحدة', 'شحن', 'تحصيل المندوب', 'مسجل مسبقاً', 'النوع', 'النتيجة', 'الخطأ'];
     const COL_COUNT = headers.length;
     const rows = [headers.join(',')];
 
@@ -1309,7 +1314,8 @@
     for (const entry of log) {
       const d    = new Date(entry.date);
       const date = d.toLocaleDateString('en-GB');
-      const courier = entry.courier || '—';
+      const courier   = entry.courier || '—';
+      const entryType = entry.type === 'preRegister' ? 'تسجيل مسبق' : 'تحصيل';
 
       for (const o of entry.orders) {
         const cc = (o.amount && o.shippingAmount)
@@ -1318,75 +1324,62 @@
         const shipping  = o.shippingAmount || '0.00';
         const result    = o.status === 'success' ? 'ناجح' : 'فشل';
         const errorTxt  = o.error ? `"${o.error}"` : '';
+        const isPrereg  = o.preRegistered ? 'نعم' : 'لا';
 
         if (o.lineItems && o.lineItems.length > 0) {
           o.lineItems.forEach((li, idx) => {
             const isFirst = idx === 0;
             rows.push([
-              isFirst ? date         : '',           // التاريخ
-              isFirst ? courier      : '',           // المندوب
-              isFirst ? (o.orderName || '—') : '',  // رقم الأوردر
-              `"${li.sku}"`,                        // SKU
-              li.quantity,                          // الكمية
-              li.unitPrice || '0.00',               // سعر الوحدة
-              isFirst ? shipping     : '',           // شحن
-              isFirst ? cc           : '',           // تحصيل المندوب
-              isFirst ? result       : '',           // النتيجة
-              isFirst ? errorTxt     : '',           // الخطأ
+              isFirst ? date         : '',
+              isFirst ? courier      : '',
+              isFirst ? (o.orderName || '—') : '',
+              `"${li.sku}"`,
+              li.quantity,
+              li.unitPrice || '0.00',
+              isFirst ? shipping     : '',
+              isFirst ? cc           : '',
+              isFirst ? isPrereg     : '',
+              isFirst ? entryType    : '',
+              isFirst ? result       : '',
+              isFirst ? errorTxt     : '',
             ].join(','));
           });
         } else {
           rows.push([
-            date,
-            courier,
-            o.orderName || '—',
-            '',          // SKU
-            '',          // الكمية
-            '',          // سعر الوحدة
-            shipping,
-            cc,
-            result,
-            errorTxt,
+            date, courier, o.orderName || '—',
+            '', '', '', shipping, cc, isPrereg, entryType, result, errorTxt,
           ].join(','));
         }
       }
 
-      // ── Payment methods summary rows ────────────────────────────
-      const pm           = entry.paymentMethods || {};
-      const cash         = parseFloat(pm.cash)         || 0;
-      const instapay     = parseFloat(pm.instapay)     || 0;
-      const wallet       = parseFloat(pm.wallet)       || 0;
-      const pmTotal      = cash + instapay + wallet;
-      const extraShip    = parseFloat(entry.extraShipping) || 0;
-      const grossCollect = parseFloat(entry.courierCollect) || pmTotal + extraShip;
+      // Payment summary rows (only for payment entries)
+      if (entry.type !== 'preRegister') {
+        const pm           = entry.paymentMethods || {};
+        const cash         = parseFloat(pm.cash)         || 0;
+        const instapay     = parseFloat(pm.instapay)     || 0;
+        const wallet       = parseFloat(pm.wallet)       || 0;
+        const extraShip    = parseFloat(entry.extraShipping) || 0;
+        const grossCollect = parseFloat(entry.courierCollect) || (cash + instapay + wallet + extraShip);
 
-      // Empty separator row
-      rows.push(emptyRow());
+        rows.push(emptyRow());
+        const summaryRows = [
+          { label: 'إجمالي التحصيل', value: grossCollect },
+          ...(extraShip > 0 ? [
+            { label: 'مصاريف شحن إضافية', value: -extraShip },
+            { label: 'صافي التحصيل',      value: Math.max(0, grossCollect - extraShip) },
+          ] : []),
+          { label: 'محفظة',    value: wallet   },
+          { label: 'انستاباي', value: instapay },
+          { label: 'نقدي',     value: cash     },
+        ];
+        summaryRows.forEach(sr => {
+          rows.push([
+            date, courier, `"${sr.label}"`,
+            '', '', '', '', sr.value.toFixed(2), '', '', '', '',
+          ].join(','));
+        });
+      }
 
-      // Summary rows: الإجمالي (gross) / مصاريف شحن إضافية / صافي التحصيل / محفظة / انستاباي / نقدي
-      const summaryRows = [
-        { label: 'إجمالي التحصيل', value: grossCollect },
-        ...(extraShip > 0 ? [
-          { label: 'مصاريف شحن إضافية', value: -extraShip },
-          { label: 'صافي التحصيل',      value: Math.max(0, grossCollect - extraShip) },
-        ] : []),
-        { label: 'محفظة',    value: wallet   },
-        { label: 'انستاباي', value: instapay },
-        { label: 'نقدي',     value: cash     },
-      ];
-      summaryRows.forEach(sr => {
-        rows.push([
-          date,
-          courier,
-          `"${sr.label}"`,
-          '', '', '',
-          '',
-          sr.value.toFixed(2),
-          '', '',
-        ].join(','));
-      });
-
-      // Empty row between entries
       rows.push(emptyRow());
     }
 
