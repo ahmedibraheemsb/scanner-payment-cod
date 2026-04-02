@@ -1183,41 +1183,6 @@
     if (!displayLog.length) { container.innerHTML = '<div class="log-empty">لا توجد عمليات مسجلة</div>'; return; }
 
     container.innerHTML = displayLog.map((entry, i) => {
-      const isPrereg = false; // always false after filter
-
-      if (isPrereg) {
-        // ── Pre-register entry (purple style) ──────────────────────
-        return `
-        <div class="log-entry type-prereg">
-          <div class="log-entry-header">
-            <input type="checkbox" class="log-check" data-log-index="${i}" onchange="onLogCheckChange()">
-            <div class="log-entry-info" onclick="toggleLogEntry(this)">
-              <div class="log-entry-date">${formatLogDate(entry.date)}</div>
-              <div class="log-entry-summary">
-                <span class="log-tag tag-prereg">📋 تسجيل مسبق</span>
-                <span class="log-tag tag-count">${entry.totalOrders} أوردر</span>
-                ${entry.totalAmount ? `<span class="log-tag tag-payment">${parseFloat(entry.totalAmount).toLocaleString('en-US',{minimumFractionDigits:2})}</span>` : ''}
-              </div>
-            </div>
-            <div class="log-entry-stats">
-              <span class="stat-success">✓${entry.success}</span>
-              <span class="stat-error">✗${entry.errors}</span>
-            </div>
-            <span class="log-toggle" onclick="toggleLogEntry(this)">▶</span>
-          </div>
-          <div class="log-entry-details">
-            ${entry.orders.map(o => `
-              <div class="log-detail-item">
-                <div class="log-detail-main">
-                  <span class="log-detail-order">${o.orderName || ''} <span style="color:var(--text-dim);font-size:0.7rem">${o.order}</span>${o.courier ? ` <span style="color:#ec4899;font-size:0.72rem;font-weight:600">${o.courier}</span>` : ''}</span>
-                  <span class="log-detail-amount">${o.amount || ''}</span>
-                  <span class="log-detail-status log-detail-${o.status}">${o.status === 'success' ? '✓ ناجح' : '✗ فشل'}</span>
-                </div>
-              </div>`).join('')}
-          </div>
-        </div>`;
-      }
-
       // ── Normal payment entry ──────────────────────────────────────
       const pm = entry.paymentMethods || {};
       const pmChips = [];
@@ -1230,7 +1195,7 @@
       return `
       <div class="log-entry">
         <div class="log-entry-header">
-          <input type="checkbox" class="log-check" data-log-index="${i}" onchange="onLogCheckChange()">
+          <input type="checkbox" class="log-check" data-log-date="${entry.date}" onchange="onLogCheckChange()">
           <div class="log-entry-info" onclick="toggleLogEntry(this)">
             <div class="log-entry-date">${formatLogDate(entry.date)}</div>
             <div class="log-entry-summary">
@@ -1299,9 +1264,9 @@
 
     let log;
     if (selectedOnly) {
-      const idx = [...document.querySelectorAll('.log-check:checked')].map(cb => parseInt(cb.dataset.logIndex));
-      if (!idx.length) { alert('اختر عمليات أولاً'); return; }
-      log = idx.map(i => fullLog[i]).filter(Boolean);
+      const dates = [...document.querySelectorAll('.log-check:checked')].map(cb => cb.dataset.logDate);
+      if (!dates.length) { alert('اختر عمليات أولاً'); return; }
+      log = fullLog.filter(e => dates.includes(e.date));
     } else {
       log = fullLog;
     }
