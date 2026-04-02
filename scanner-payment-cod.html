@@ -500,8 +500,8 @@
       <h2>📜 سجل العمليات <span class="log-sync-status local" id="logSyncStatus">محلي</span></h2>
       <div class="log-actions">
         <button class="log-btn" onclick="syncFromCloud()" title="جلب من السيرفر">🔄</button>
-        <button class="log-btn export-selected" id="exportSelectedBtn" onclick="exportLogCSV(true)">📥 تصدير المحدد</button>
-        <button class="log-btn export" onclick="exportLogCSV(false)">📥 تصدير الكل</button>
+        <button class="log-btn export-selected" id="exportSelectedBtn" onclick="exportLogXLSX(true)">📥 تصدير المحدد</button>
+        <button class="log-btn export" onclick="exportLogXLSX(false)">📥 تصدير الكل</button>
       </div>
     </div>
     <div class="log-list" id="logList">
@@ -1293,7 +1293,7 @@
   }
 
   // ── CSV Export ────────────────────────────────────────────────────
-  function exportLogCSV(selectedOnly) {
+  async function exportLogXLSX(selectedOnly) {
     const fullLog = getLog();
     if (!fullLog.length) { alert('السجل فارغ'); return; }
 
@@ -1305,94 +1305,173 @@
     } else {
       log = fullLog;
     }
-    // استثناء entries التسجيل المسبق من التصدير الشامل
+    // استثناء entries التسجيل المسبق
     log = log.filter(e => e.type !== 'preRegister');
+    if (!log.length) { alert('لا توجد عمليات تحصيل للتصدير'); return; }
 
-    const BOM = '\uFEFF';
-    const headers = ['التاريخ', 'المندوب', 'رقم الأوردر', 'SKU', 'الكمية', 'سعر الوحدة', 'شحن', 'تحصيل المندوب', 'مسجل مسبقاً', 'النتيجة', 'الخطأ'];
-    const COL_COUNT = headers.length;
-    const rows = [headers.join(',')];
+    // Load SheetJS dynamically
+    if (!window.XLSX) {
+      await new Promise((resolve, reject) => {
+        const s = document.createElement('script');
+        s.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+        s.onload = resolve; s.onerror = reject;
+        document.head.appendChild(s);
+      });
+    }
 
-    function emptyRow() { return Array(COL_COUNT).fill('').join(','); }
+    const XL   = window.XLSX;
+    const wb   = XL.utils.book_new();
+    const ws   = {};
+    let rowIdx = 1; // 1-based
+
+    // ── Colors ─────────────────────────────────────────────────────
+    const HEADER_FILL  = { patternType: 'solid', fgColor: { rgb: 'FFD700' } }; // gold
+    const COURIER_FILL = { patternType: 'solid', fgColor: { rgb: '4472C4' } }; // blue
+    const GRAND_FILL   = { patternType: 'solid', fgColor: { rgb: '2E75B6' } }; // darker blue
+    const BOLD         = { bold: true };
+    const BOLD_WHITE   = { bold: true, color: { rgb: 'FFFFFF' } };
+    const CENTER       = { horizontal: 'center' };
+    const RIGHT_AR     = { horizontal: 'right', readingOrder: 2 };
+    const NUM_FMT      = '#,##0.00';
+
+    const cols = ['التاريخ','المندوب','رقم الأوردر','SKU','الكمية','سعر الوحدة','شحن','تحصيل المندوب','مسجل مسبقاً','النتيجة','الخطأ'];
+    const NCOLS = cols.length;
+
+    function cell(v, s) { return { v, t: typeof v === 'number' ? 'n' : 's', s }; }
+    function numCell(v, s) { return { v: parseFloat(v)||0, t: 'n', z: NUM_FMT, s }; }
+    function setRow(rowData, style) {
+      rowData.forEach((val, ci) => {
+        const ref = XL.utils.encode_cell({ r: rowIdx - 1, c: ci });
+        ws[ref] = typeof val === 'object' ? val : cell(String(val ?? ''), style);
+      });
+      rowIdx++;
+    }
+
+    // Header row
+    cols.forEach((h, ci) => {
+      ws[XL.utils.encode_cell({ r: 0, c: ci })] = {
+        v: h, t: 's',
+        s: { fill: HEADER_FILL, font: { bold: true }, alignment: CENTER },
+      };
+    });
+    rowIdx = 2;
+
+    // Accumulators for grand total
+    let grandCollect = 0, grandCash = 0, grandInstapay = 0, grandWallet = 0, grandExtra = 0;
 
     for (const entry of log) {
-      const d    = new Date(entry.date);
-      const date = d.toLocaleDateString('en-GB');
-      const courier   = entry.courier || '—';
-      const entryType = entry.type === 'preRegister' ? 'تسجيل مسبق' : 'تحصيل';
+      const date    = new Date(entry.date).toLocaleDateString('en-GB');
+      const courier = entry.courier || '—';
+      const pm      = entry.paymentMethods || {};
+      const cash      = parseFloat(pm.cash)     || 0;
+      const instapay  = parseFloat(pm.instapay) || 0;
+      const wallet    = parseFloat(pm.wallet)   || 0;
+      const extraShip = parseFloat(entry.extraShipping) || 0;
+      const collect   = parseFloat(entry.courierCollect) || 0;
 
-      for (const o of entry.orders) {
-        const cc = (o.amount && o.shippingAmount)
-          ? (parseFloat(o.amount) - parseFloat(o.shippingAmount)).toFixed(2)
-          : '0.00';
-        const shipping  = o.shippingAmount || '0.00';
-        const result    = o.status === 'success' ? 'ناجح' : 'فشل';
-        const errorTxt  = o.error ? `"${o.error}"` : '';
-        const isPrereg  = o.preRegistered ? 'نعم' : 'لا';
+      grandCollect  += collect;
+      grandCash     += cash;
+      grandInstapay += instapay;
+      grandWallet   += wallet;
+      grandExtra    += extraShip;
+
+      // Order rows
+      for (const o of (entry.orders || [])) {
+        const cc      = (parseFloat(o.amount)||0) - (parseFloat(o.shippingAmount)||0);
+        const ship    = parseFloat(o.shippingAmount) || 0;
+        const result  = o.status === 'success' ? 'ناجح' : 'فشل';
+        const prereg  = o.preRegistered ? 'نعم' : 'لا';
+        const errTxt  = o.error || '';
 
         if (o.lineItems && o.lineItems.length > 0) {
-          o.lineItems.forEach((li, idx) => {
-            const isFirst = idx === 0;
-            rows.push([
-              isFirst ? date         : '',
-              isFirst ? courier      : '',
-              isFirst ? (o.orderName || '—') : '',
-              `"${li.sku}"`,
-              li.quantity,
-              li.unitPrice || '0.00',
-              isFirst ? shipping     : '',
-              isFirst ? cc           : '',
-              isFirst ? isPrereg     : '',
-              isFirst ? result       : '',
-              isFirst ? errorTxt     : '',
-            ].join(','));
+          o.lineItems.forEach((li, i) => {
+            setRow([
+              i===0 ? date        : '',
+              i===0 ? courier     : '',
+              i===0 ? (o.orderName||'') : '',
+              li.sku || '',
+              i===0 ? { v: li.quantity, t:'n', s:{} } : '',
+              i===0 ? numCell(li.unitPrice) : '',
+              i===0 ? numCell(ship) : '',
+              i===0 ? numCell(cc)   : '',
+              i===0 ? prereg      : '',
+              i===0 ? result      : '',
+              i===0 ? errTxt      : '',
+            ]);
           });
         } else {
-          rows.push([
-            date, courier, o.orderName || '—',
-            '', '', '', shipping, cc, isPrereg, result, errorTxt,
-          ].join(','));
+          setRow([date, courier, o.orderName||'', '', '', '', numCell(ship), numCell(cc), prereg, result, errTxt]);
         }
       }
 
-      // Payment summary rows (only for payment entries)
-      if (entry.type !== 'preRegister') {
-        const pm           = entry.paymentMethods || {};
-        const cash         = parseFloat(pm.cash)         || 0;
-        const instapay     = parseFloat(pm.instapay)     || 0;
-        const wallet       = parseFloat(pm.wallet)       || 0;
-        const extraShip    = parseFloat(entry.extraShipping) || 0;
-        const grossCollect = parseFloat(entry.courierCollect) || (cash + instapay + wallet + extraShip);
+      // ── Courier summary row (blue) ──────────────────────────────
+      const summaryStyle = { fill: COURIER_FILL, font: BOLD_WHITE };
+      const emptyCells = Array(NCOLS).fill('');
+      const courierSummaryRow = [...emptyCells];
+      courierSummaryRow[0] = cell(date, summaryStyle);
+      courierSummaryRow[1] = cell(courier, summaryStyle);
+      courierSummaryRow[2] = cell('إجمالي التحصيل', summaryStyle);
+      courierSummaryRow[7] = numCell(collect, summaryStyle);
+      setRow(courierSummaryRow);
 
-        rows.push(emptyRow());
-        const summaryRows = [
-          { label: 'إجمالي التحصيل', value: grossCollect },
-          ...(extraShip > 0 ? [
-            { label: 'مصاريف شحن إضافية', value: -extraShip },
-            { label: 'صافي التحصيل',      value: Math.max(0, grossCollect - extraShip) },
-          ] : []),
-          { label: 'محفظة',    value: wallet   },
-          { label: 'انستاباي', value: instapay },
-          { label: 'نقدي',     value: cash     },
-        ];
-        summaryRows.forEach(sr => {
-          rows.push([
-            date, courier, `"${sr.label}"`,
-            '', '', '', '', sr.value.toFixed(2), '', '', '', '',
-          ].join(','));
-        });
-      }
+      // Payment method sub-rows
+      const pmRows = [
+        ['نقدي',     cash],
+        ['انستاباي', instapay],
+        ['محفظة',   wallet],
+      ];
+      if (extraShip > 0) pmRows.push(['مصاريف شحن إضافية', -extraShip]);
+      pmRows.forEach(([label, val]) => {
+        const r = Array(NCOLS).fill('');
+        r[0] = cell(date, {});
+        r[1] = cell(courier, {});
+        r[2] = cell(label, {});
+        r[7] = numCell(val);
+        setRow(r);
+      });
 
-      rows.push(emptyRow());
+      // Empty separator
+      setRow(Array(NCOLS).fill(''));
     }
 
-    const blob = new Blob([BOM + rows.join('\n')], { type: 'text/csv;charset=utf-8;' });
-    const url  = URL.createObjectURL(blob);
-    const a    = document.createElement('a');
-    a.href = url;
-    a.download = `cod-payment-log-${new Date().toISOString().slice(0,10)}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
+    // ── Grand total row (darker blue) ───────────────────────────────
+    const gtStyle = { fill: GRAND_FILL, font: BOLD_WHITE };
+    const gtRow   = Array(NCOLS).fill('');
+    gtRow[1] = cell('جميع المناديب', gtStyle);
+    gtRow[2] = cell('إجمالي التحصيل', gtStyle);
+    gtRow[7] = numCell(grandCollect, gtStyle);
+    setRow(gtRow);
+
+    const gtPmRows = [['نقدي', grandCash], ['انستاباي', grandInstapay], ['محفظة', grandWallet]];
+    if (grandExtra > 0) gtPmRows.push(['مصاريف شحن إضافية', -grandExtra]);
+    gtPmRows.forEach(([label, val]) => {
+      const r = Array(NCOLS).fill('');
+      r[2] = cell(label, {});
+      r[7] = numCell(val);
+      setRow(r);
+    });
+
+    // Sheet range & col widths
+    ws['!ref'] = XL.utils.encode_range({ s: { r:0, c:0 }, e: { r: rowIdx-1, c: NCOLS-1 } });
+    ws['!cols'] = [
+      { wch: 12 }, // التاريخ
+      { wch: 14 }, // المندوب
+      { wch: 14 }, // رقم الأوردر
+      { wch: 22 }, // SKU
+      { wch: 7  }, // الكمية
+      { wch: 12 }, // سعر الوحدة
+      { wch: 10 }, // شحن
+      { wch: 15 }, // تحصيل المندوب
+      { wch: 12 }, // مسجل مسبقاً
+      { wch: 8  }, // النتيجة
+      { wch: 18 }, // الخطأ
+    ];
+    ws['!dir'] = 'rtl';
+
+    XL.utils.book_append_sheet(wb, ws, 'سجل التحصيل');
+
+    const fname = `cod-payment-log-${new Date().toISOString().slice(0,10)}.xlsx`;
+    XL.writeFile(wb, fname);
   }
 
   // Init
