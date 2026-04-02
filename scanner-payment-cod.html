@@ -1393,8 +1393,7 @@
         const prereg = o.preRegistered ? 'نعم' : 'لا';
 
         if (o.lineItems && o.lineItems.length > 0) {
-          const validItems = o.lineItems.filter(li => parseFloat(li.unitPrice) > 0 || parseFloat(li.totalPrice) > 0);
-          (validItems.length > 0 ? validItems : o.lineItems).forEach((li, i) => {
+          o.lineItems.forEach((li, i) => {
             const r = ws.addRow({
               date:    i === 0 ? date    : null,
               courier: courier,              // ← دايماً فيها اسم المندوب
