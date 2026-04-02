@@ -1418,7 +1418,7 @@
         }
       }
 
-      // ── Courier summary row (blue) ───────────────────────────────
+      // ── Courier summary in Sheet 1 (no grand total here) ────────
       const sumRow = ws.addRow({
         date, courier, order: 'إجمالي التحصيل',
         sku:'', qty:'', unit:'', ship:'',
@@ -1442,29 +1442,86 @@
       ws.addRow({});
     }
 
-    // ── Grand total row ───────────────────────────────────────────
-    const gtRow = ws.addRow({
-      date: '', courier: 'جميع المناديب', order: 'إجمالي التحصيل',
-      sku:'', qty:'', unit:'', ship:'',
-      collect: grandCollect, prereg:'', result:'', error:'',
-    });
-    applyGrandTotalStyle(gtRow);
-
-    const gtPmRows = [['نقدي', grandCash], ['انستاباي', grandInstapay], ['محفظة', grandWallet]];
-    if (grandExtra > 0) gtPmRows.push(['مصاريف شحن إضافية', -grandExtra]);
-    gtPmRows.forEach(([label, val]) => {
-      const r = ws.addRow({
-        date:'', courier:'', order: label,
-        sku:'', qty:'', unit:'', ship:'',
-        collect: val, prereg:'', result:'', error:'',
-      });
-      r.getCell(8).numFmt = NUM_FMT;
-      r.getCell(8).alignment = { horizontal: 'left' };
-      r.getCell(3).font = { size: 10, name: 'Arial' };
-    });
-
-    // ── Freeze top row ────────────────────────────────────────────
+    // ── Freeze top row (Sheet 1) ──────────────────────────────────
     ws.views = [{ state: 'frozen', ySplit: 1, rightToLeft: true }];
+
+    // ════════════════════════════════════════════════════════════════
+    // SHEET 2 — الإجمالي
+    // ════════════════════════════════════════════════════════════════
+    const ws2 = wb.addWorksheet('الإجمالي', { views: [{ rightToLeft: true }] });
+
+    ws2.columns = [
+      { header: 'المندوب',          key: 'courier',   width: 16 },
+      { header: 'إجمالي التحصيل',   key: 'collect',   width: 18 },
+      { header: 'نقدي',             key: 'cash',      width: 14 },
+      { header: 'انستاباي',         key: 'instapay',  width: 14 },
+      { header: 'محفظة',            key: 'wallet',    width: 14 },
+      { header: 'شحن إضافي',        key: 'extra',     width: 14 },
+      { header: 'صافي التحصيل',     key: 'net',       width: 16 },
+      { header: 'عدد الأوردرات',    key: 'orders',    width: 14 },
+    ];
+
+    // Header style for sheet 2
+    ws2.getRow(1).eachCell(cell => {
+      cell.fill   = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF' + HEADER_BG } };
+      cell.font   = { bold: true, size: 11, name: 'Arial' };
+      cell.alignment = { horizontal: 'center', vertical: 'middle', readingOrder: 'rightToLeft' };
+    });
+    ws2.getRow(1).height = 20;
+
+    // Per-courier summary rows
+    const courierTotals = {};
+    for (const entry of log) {
+      const courier = entry.courier || '—';
+      const pm      = entry.paymentMethods || {};
+      if (!courierTotals[courier]) {
+        courierTotals[courier] = { collect:0, cash:0, instapay:0, wallet:0, extra:0, orders:0 };
+      }
+      courierTotals[courier].collect  += parseFloat(entry.courierCollect) || 0;
+      courierTotals[courier].cash     += parseFloat(pm.cash)     || 0;
+      courierTotals[courier].instapay += parseFloat(pm.instapay) || 0;
+      courierTotals[courier].wallet   += parseFloat(pm.wallet)   || 0;
+      courierTotals[courier].extra    += parseFloat(entry.extraShipping) || 0;
+      courierTotals[courier].orders   += entry.totalOrders || 0;
+    }
+
+    Object.entries(courierTotals).forEach(([courier, t]) => {
+      const net = Math.max(0, t.collect - t.extra);
+      const r   = ws2.addRow({
+        courier, collect: t.collect, cash: t.cash,
+        instapay: t.instapay, wallet: t.wallet,
+        extra: t.extra > 0 ? t.extra : null,
+        net, orders: t.orders,
+      });
+      r.eachCell({ includeEmpty: false }, (cell, colNum) => {
+        cell.font = { size: 10, name: 'Arial' };
+        cell.alignment = { horizontal: colNum === 1 ? 'right' : 'left', vertical: 'middle', readingOrder: 'rightToLeft' };
+        if (colNum >= 2 && colNum <= 7) cell.numFmt = NUM_FMT;
+      });
+    });
+
+    // Grand total row in sheet 2
+    const grandNet = Math.max(0, grandCollect - grandExtra);
+    const gtRow2   = ws2.addRow({
+      courier:  'جميع المناديب',
+      collect:  grandCollect,
+      cash:     grandCash,
+      instapay: grandInstapay,
+      wallet:   grandWallet,
+      extra:    grandExtra > 0 ? grandExtra : null,
+      net:      grandNet,
+      orders:   log.reduce((s, e) => s + (e.totalOrders||0), 0),
+    });
+    gtRow2.eachCell({ includeEmpty: true }, cell => {
+      cell.fill   = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF' + GRAND_BG } };
+      cell.font   = { bold: true, color: { argb: 'FFFFFFFF' }, size: 11, name: 'Arial' };
+      cell.alignment = { horizontal: 'left', vertical: 'middle', readingOrder: 'rightToLeft' };
+    });
+    gtRow2.getCell(1).alignment = { horizontal: 'right', vertical: 'middle' };
+    [2,3,4,5,6,7].forEach(c => { gtRow2.getCell(c).numFmt = NUM_FMT; });
+    gtRow2.height = 20;
+
+    ws2.views = [{ state: 'frozen', ySplit: 1, rightToLeft: true }];
 
     // ── Download ──────────────────────────────────────────────────
     const buffer = await wb.xlsx.writeBuffer();
