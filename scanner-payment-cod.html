@@ -1321,10 +1321,10 @@
     }
 
     function applyDataStyle(row) {
-      row.eachCell({ includeEmpty: true }, (cell, colNum) => {
+      row.eachCell({ includeEmpty: false }, (cell, colNum) => {
         cell.font = { size: 10, name: 'Arial' };
         cell.alignment = { horizontal: 'right', vertical: 'middle', readingOrder: 'rightToLeft' };
-        if (colNum >= 6) {
+        if (colNum >= 6 && cell.value !== null && cell.value !== '') {
           cell.numFmt = NUM_FMT;
           cell.alignment = { horizontal: 'left', vertical: 'middle' };
         }
@@ -1394,17 +1394,17 @@
         if (o.lineItems && o.lineItems.length > 0) {
           o.lineItems.forEach((li, i) => {
             const r = ws.addRow({
-              date:    i === 0 ? date         : '',
-              courier: i === 0 ? courier      : '',
-              order:   i === 0 ? (o.orderName || '') : '',
+              date:    i === 0 ? date              : null,
+              courier: i === 0 ? courier           : null,
+              order:   i === 0 ? (o.orderName||'') : null,
               sku:     li.sku || '',
               qty:     parseFloat(li.quantity)  || 0,
-              unit:    parseFloat(li.unitPrice)  || 0,   // كل SKU له سعر وحدة خاص
-              ship:    i === 0 ? ship   : '',             // الشحن بس في أول صف
-              collect: i === 0 ? cc     : '',             // التحصيل بس في أول صف
-              prereg:  i === 0 ? prereg : '',
-              result:  i === 0 ? result : '',
-              error:   i === 0 ? (o.error || '') : '',
+              unit:    parseFloat(li.unitPrice)  || 0,
+              ship:    i === 0 ? ship   : null,
+              collect: parseFloat(li.totalPrice) || 0,  // كل SKU له إجمالي خاص بيه
+              prereg:  i === 0 ? prereg : null,
+              result:  i === 0 ? result : null,
+              error:   i === 0 ? (o.error||'') : null,
             });
             applyDataStyle(r);
           });
