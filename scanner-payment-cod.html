@@ -1433,10 +1433,10 @@
               courier: i === 0 ? courier      : '',
               order:   i === 0 ? (o.orderName || '') : '',
               sku:     li.sku || '',
-              qty:     parseFloat(li.quantity) || 0,
-              unit:    i === 0 ? (parseFloat(li.unitPrice) || 0) : '',
-              ship:    i === 0 ? ship   : '',
-              collect: i === 0 ? cc     : '',
+              qty:     parseFloat(li.quantity)  || 0,
+              unit:    parseFloat(li.unitPrice)  || 0,   // كل SKU له سعر وحدة خاص
+              ship:    i === 0 ? ship   : '',             // الشحن بس في أول صف
+              collect: i === 0 ? cc     : '',             // التحصيل بس في أول صف
               prereg:  i === 0 ? prereg : '',
               result:  i === 0 ? result : '',
               error:   i === 0 ? (o.error || '') : '',
