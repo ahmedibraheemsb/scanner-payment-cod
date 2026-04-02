@@ -1323,11 +1323,11 @@
     function applyDataStyle(row) {
       row.eachCell({ includeEmpty: false }, (cell, colNum) => {
         cell.font = { size: 10, name: 'Arial' };
-        cell.alignment = { horizontal: 'right', vertical: 'middle', readingOrder: 'rightToLeft' };
-        // cols 5(qty), 6(unit), 7(ship), 8(collect) = numeric
+        cell.alignment = { horizontal: 'center', vertical: 'middle', readingOrder: 'rightToLeft' };
+        // cols 5(qty), 6(unit), 7(ship), 8(collect) = numeric → left aligned
         if (colNum >= 5 && colNum <= 8 && cell.value !== null && cell.value !== '') {
           cell.numFmt = NUM_FMT;
-          cell.alignment = { horizontal: 'left', vertical: 'middle' };
+          cell.alignment = { horizontal: 'center', vertical: 'middle' };
         }
       });
     }
@@ -1336,30 +1336,30 @@
       row.eachCell({ includeEmpty: true }, cell => {
         cell.fill   = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF' + COURIER_BG } };
         cell.font   = { bold: true, color: { argb: 'FFFFFFFF' }, size: 11, name: 'Arial' };
-        cell.alignment = { horizontal: 'right', vertical: 'middle', readingOrder: 'rightToLeft' };
+        cell.alignment = { horizontal: 'center', vertical: 'middle', readingOrder: 'rightToLeft' };
       });
       row.getCell(8).numFmt = NUM_FMT;
-      row.getCell(8).alignment = { horizontal: 'left', vertical: 'middle' };
+      row.getCell(8).alignment = { horizontal: 'center', vertical: 'middle' };
       row.height = 18;
     }
 
     function applySubtotalStyle(row) {
       row.eachCell({ includeEmpty: true }, cell => {
         cell.font = { size: 10, name: 'Arial', color: { argb: 'FF333333' } };
-        cell.alignment = { horizontal: 'right', vertical: 'middle', readingOrder: 'rightToLeft' };
+        cell.alignment = { horizontal: 'center', vertical: 'middle', readingOrder: 'rightToLeft' };
       });
       row.getCell(8).numFmt = NUM_FMT;
-      row.getCell(8).alignment = { horizontal: 'left', vertical: 'middle' };
+      row.getCell(8).alignment = { horizontal: 'center', vertical: 'middle' };
     }
 
     function applyGrandTotalStyle(row) {
       row.eachCell({ includeEmpty: true }, cell => {
         cell.fill   = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF' + GRAND_BG } };
         cell.font   = { bold: true, color: { argb: 'FFFFFFFF' }, size: 12, name: 'Arial' };
-        cell.alignment = { horizontal: 'right', vertical: 'middle', readingOrder: 'rightToLeft' };
+        cell.alignment = { horizontal: 'center', vertical: 'middle', readingOrder: 'rightToLeft' };
       });
       row.getCell(8).numFmt = NUM_FMT;
-      row.getCell(8).alignment = { horizontal: 'left', vertical: 'middle' };
+      row.getCell(8).alignment = { horizontal: 'center', vertical: 'middle' };
       row.height = 22;
     }
 
@@ -1393,10 +1393,11 @@
         const prereg = o.preRegistered ? 'نعم' : 'لا';
 
         if (o.lineItems && o.lineItems.length > 0) {
-          o.lineItems.forEach((li, i) => {
+          const validItems = o.lineItems.filter(li => parseFloat(li.unitPrice) > 0 || parseFloat(li.totalPrice) > 0);
+          (validItems.length > 0 ? validItems : o.lineItems).forEach((li, i) => {
             const r = ws.addRow({
-              date:    i === 0 ? date              : null,
-              courier: i === 0 ? courier           : null,
+              date:    i === 0 ? date    : null,
+              courier: courier,              // ← دايماً فيها اسم المندوب
               order:   i === 0 ? (o.orderName||'') : null,
               sku:     li.sku || '',
               qty:     parseFloat(li.quantity)  || 0,
@@ -1418,9 +1419,7 @@
           applyDataStyle(r);
         }
       }
-
-      // Empty separator بين المناديب
-      ws.addRow({});
+      // لا يوجد سطر فاضي بين المناديب
     }
 
     // ── Freeze top row (Sheet 1) ──────────────────────────────────
@@ -1476,7 +1475,7 @@
       });
       r.eachCell({ includeEmpty: false }, (cell, colNum) => {
         cell.font = { size: 10, name: 'Arial' };
-        cell.alignment = { horizontal: colNum === 1 ? 'right' : 'left', vertical: 'middle', readingOrder: 'rightToLeft' };
+        cell.alignment = { horizontal: 'center', vertical: 'middle', readingOrder: 'rightToLeft' };
         if (colNum >= 2 && colNum <= 7) cell.numFmt = NUM_FMT;
       });
     });
@@ -1496,9 +1495,8 @@
     gtRow2.eachCell({ includeEmpty: true }, cell => {
       cell.fill   = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF' + GRAND_BG } };
       cell.font   = { bold: true, color: { argb: 'FFFFFFFF' }, size: 11, name: 'Arial' };
-      cell.alignment = { horizontal: 'left', vertical: 'middle', readingOrder: 'rightToLeft' };
+      cell.alignment = { horizontal: 'center', vertical: 'middle', readingOrder: 'rightToLeft' };
     });
-    gtRow2.getCell(1).alignment = { horizontal: 'right', vertical: 'middle' };
     [2,3,4,5,6,7].forEach(c => { gtRow2.getCell(c).numFmt = NUM_FMT; });
     gtRow2.height = 20;
 
