@@ -526,7 +526,7 @@
 
   // ── Helpers ───────────────────────────────────────────────────────
   function fmt(num) {
-    return Number(num).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    return Number(num).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
   }
 
   function financialLabel(s) {
@@ -945,7 +945,7 @@
     saveLogEntry(logEntry);
 
     if (successCount > 0 && failCount === 0) {
-      showResult(true, `✅ تم تسجيل التحصيل بنجاح لـ ${successCount} أوردر`, `المندوب: ${courierName} — الإجمالي: ${fmt(paidTotal)}`);
+      showResult(true, `✅ تم تسجيل التحصيل بنجاح لـ ${successCount} أوردر`, `المندوب: ${courierName} — تحصيل المندوب: ${fmt(paidCourierCollect)}`);
     } else if (successCount > 0) {
       showResult(true, `✅ ${successCount} نجح  ⚠️ ${failCount} فشل`, 'راجع الجدول للتفاصيل');
     } else {
@@ -1288,21 +1288,29 @@
       { header: 'الكمية',               key: 'qty',           width: 8  },
       { header: 'سعر الوحدة',           key: 'unit',          width: 13 },
       { header: 'خصم الوحدة',           key: 'unitDiscount',  width: 13 },
-      { header: 'شحن',                  key: 'ship',          width: 10 },
-      { header: 'خصم إضافي الأوردر',    key: 'orderDiscount', width: 18 },
       { header: 'تحصيل المندوب',        key: 'collect',       width: 16 },
+      { header: 'خصم إضافي الأوردر',    key: 'orderDiscount', width: 18 },
       { header: 'صافي تحصيل الأوردر',   key: 'netCollect',    width: 18 },
+      { header: 'شحن',                  key: 'ship',          width: 10 },
       { header: 'النتيجة',              key: 'result',        width: 9  },
       { header: 'الخطأ',                key: 'error',         width: 18 },
       { header: 'مسجل مسبقاً',          key: 'prereg',        width: 13 },
     ];
 
-    const HEADER_BG  = 'FFD700';
-    const GRAND_BG   = '1F4E79';
-    const NUM_FMT    = '#,##0';
-    // ── Red fill for failed rows ──
-    const FAIL_BG    = 'FFCCCC'; // light red background
-    const FAIL_RESULT_BG = 'FF0000'; // solid red for result cell
+    const HEADER_BG      = 'FFD700';
+    const GRAND_BG       = '1F4E79';
+    const NUM_FMT        = '#,##0';
+    const FAIL_BG        = 'FFCCCC';
+    const FAIL_RESULT_BG = 'FF0000';
+    // Column theme colors
+    const DISCOUNT_BG    = 'FFF2CC';  // light yellow for discount columns (G=7, I=9)
+    const DISCOUNT_FONT  = 'C00000';  // dark red font for discount values
+    const SHIP_BG        = 'F2F2F2';  // light grey for shipping column (K=11)
+    const QTY_BG         = 'DDEEFF';  // light blue for qty > 1 (E=5)
+
+    // Col indices (1-based):
+    // 1=date 2=courier 3=order 4=sku 5=qty 6=unit 7=unitDiscount
+    // 8=collect 9=orderDiscount 10=netCollect 11=ship 12=result 13=error 14=prereg
 
     function applyHeaderStyle(row) {
       row.eachCell(cell => {
@@ -1314,21 +1322,47 @@
       row.height = 20;
     }
 
-    function applyDataStyle(row, isFailed) {
+    function applyDataStyle(row, isFailed, qtyVal) {
       row.eachCell({ includeEmpty: false }, (cell, colNum) => {
         cell.font = { size: 10, name: 'Arial' };
         cell.alignment = { horizontal: 'center', vertical: 'middle', readingOrder: 'rightToLeft' };
-        // cols 5(qty), 6(unit), 7(unitDiscount), 8(ship), 9(orderDiscount), 10(collect), 11(netCollect) = numeric
-        if (colNum >= 5 && colNum <= 11 && cell.value !== null && cell.value !== '') {
+
+        // Numeric format for money/qty columns
+        if ([5,6,7,8,9,10,11].includes(colNum) && cell.value !== null && cell.value !== '') {
           cell.numFmt = NUM_FMT;
           cell.alignment = { horizontal: 'center', vertical: 'middle' };
         }
-        // Apply light red background to all cells in failed row
+
+        // Light red background for all cells in failed rows
         if (isFailed) {
           cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF' + FAIL_BG } };
+          return; // skip theme colors for failed rows
+        }
+
+        // ── Theme colors ────────────────────────────────────────────
+        // Shipping column (K=11) → grey background
+        if (colNum === 11) {
+          cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF' + SHIP_BG } };
+          cell.font = { size: 10, name: 'Arial', color: { argb: 'FF666666' } };
+        }
+        // Unit discount column (G=7) → yellow bg + red font (only if has value)
+        if (colNum === 7 && cell.value !== null && cell.value !== '') {
+          cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF' + DISCOUNT_BG } };
+          cell.font = { size: 10, name: 'Arial', bold: true, color: { argb: 'FF' + DISCOUNT_FONT } };
+        }
+        // Order discount column (I=9) → yellow bg + red font (only if has value)
+        if (colNum === 9 && cell.value !== null && cell.value !== '') {
+          cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF' + DISCOUNT_BG } };
+          cell.font = { size: 10, name: 'Arial', bold: true, color: { argb: 'FF' + DISCOUNT_FONT } };
+        }
+        // Qty column (E=5) → blue bg if qty > 1
+        if (colNum === 5 && qtyVal > 1) {
+          cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF' + QTY_BG } };
+          cell.font = { size: 10, name: 'Arial', bold: true };
         }
       });
-      // Result cell (col 12) gets solid red with white text for failed rows
+
+      // Result cell for failed rows → solid red + white bold
       if (isFailed) {
         const resultCell = row.getCell(12);
         resultCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF' + FAIL_RESULT_BG } };
@@ -1367,7 +1401,6 @@
         const prereg = o.preRegistered ? 'نعم' : 'لا';
 
         if (isFailed) {
-          // ── Failed order: only date, courier, order name, result, error ──
           const r = ws.addRow({
             date,
             courier,
@@ -1376,58 +1409,56 @@
             qty:          null,
             unit:         null,
             unitDiscount: null,
-            ship:         null,
-            orderDiscount: null,
             collect:      null,
+            orderDiscount: null,
             netCollect:   null,
+            ship:         null,
             result,
             error:        o.error || '',
             prereg,
           });
-          applyDataStyle(r, true);
+          applyDataStyle(r, true, 0);
         } else if (o.lineItems && o.lineItems.length > 0) {
-          // ── Successful order with line items ──
-          const orderDiscountVal = o.orderDiscount ? parseFloat(o.orderDiscount) : null; // negative or null
+          const orderDiscountVal = o.orderDiscount ? parseFloat(o.orderDiscount) : null;
           const cc = (parseFloat(o.amount)||0) - (parseFloat(o.shippingAmount)||0);
-          // netCollect = courierCollect + orderDiscount (orderDiscount is already negative)
           const netCollect = orderDiscountVal !== null ? cc + orderDiscountVal : cc;
 
           o.lineItems.forEach((li, i) => {
             const unitDiscountVal = (li.unitDiscount !== null && li.unitDiscount !== undefined)
-              ? parseFloat(li.unitDiscount)   // already negative
-              : null;
+              ? parseFloat(li.unitDiscount) : null;
+            const qtyVal = parseFloat(li.quantity) || 0;
             const r = ws.addRow({
-              date:         i === 0 ? date    : null,
+              date:         i === 0 ? date : null,
               courier,
               order:        i === 0 ? (o.orderName||'') : null,
               sku:          li.sku || '',
-              qty:          parseFloat(li.quantity)  || 0,
-              unit:         parseFloat(li.unitPrice)  || 0,
-              unitDiscount: unitDiscountVal,                        // negative or null → cell empty if null
-              ship:         i === 0 ? ship   : null,
-              orderDiscount: i === 0 ? orderDiscountVal : null,    // negative or null, first row only
+              qty:          qtyVal,
+              unit:         parseFloat(li.unitPrice) || 0,
+              unitDiscount: unitDiscountVal,
               collect:      parseFloat(li.totalPrice) || 0,
+              orderDiscount: i === 0 ? orderDiscountVal : null,
               netCollect:   i === 0 ? parseFloat(netCollect.toFixed(2)) : null,
+              ship:         i === 0 ? ship : null,
               result:       i === 0 ? result : null,
               error:        i === 0 ? (o.error||'') : null,
               prereg:       i === 0 ? prereg : null,
             });
-            applyDataStyle(r, false);
+            applyDataStyle(r, false, qtyVal);
           });
         } else {
-          // ── Successful order without line items ──
           const orderDiscountVal = o.orderDiscount ? parseFloat(o.orderDiscount) : null;
           const netCollect = orderDiscountVal !== null ? cc + orderDiscountVal : cc;
           const r = ws.addRow({
             date, courier, order: o.orderName || '',
             sku: '', qty: null, unit: null,
             unitDiscount: null,
-            ship, orderDiscount: orderDiscountVal,
             collect: cc,
+            orderDiscount: orderDiscountVal,
             netCollect: parseFloat(netCollect.toFixed(2)),
+            ship,
             result, error: o.error || '', prereg,
           });
-          applyDataStyle(r, false);
+          applyDataStyle(r, false, 0);
         }
       }
     }
