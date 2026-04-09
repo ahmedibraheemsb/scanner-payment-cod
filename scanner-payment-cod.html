@@ -710,6 +710,7 @@
         order.courier         = data.courier || null;
         order.lineItems       = data.lineItems || [];
         order.preRegistered   = data.preRegistered || false;
+        order.orderDiscount   = data.orderDiscount != null ? data.orderDiscount : null;
         order.status          = data.canMarkAsPaid ? 'ready' : 'skipped';
       } else if (data.notFound) {
         order.status = 'notfound';
@@ -795,6 +796,7 @@
         order.courier         = d2.courier || null;
         order.lineItems       = d2.lineItems || [];
         order.preRegistered   = d2.preRegistered || false;
+        order.orderDiscount   = d2.orderDiscount != null ? d2.orderDiscount : null;
         order.status          = d2.canMarkAsPaid ? 'ready' : 'skipped';
       } else {
         order.status = 'error'; order.error = d2.error || 'خطأ';
@@ -934,6 +936,7 @@
         subtotal:       o.subtotal      != null ? o.subtotal.toFixed(2)      : '0.00',
         shippingAmount: o.shippingAmount != null ? o.shippingAmount.toFixed(2) : '0.00',
         lineItems:      o.lineItems || [],
+        orderDiscount:  o.orderDiscount  != null ? o.orderDiscount            : null,
         preRegistered:  o.preRegistered || false,
         status:         o.status === 'done' ? 'success' : 'error',
         error:          o.error || null,
@@ -1278,17 +1281,20 @@
     const ws = wb.addWorksheet('سجل التحصيل', { views: [{ rightToLeft: true }] });
 
     ws.columns = [
-      { header: 'التاريخ',         key: 'date',     width: 14 },
-      { header: 'المندوب',         key: 'courier',  width: 14 },
-      { header: 'رقم الأوردر',     key: 'order',    width: 14 },
-      { header: 'SKU',             key: 'sku',      width: 24 },
-      { header: 'الكمية',          key: 'qty',      width: 8  },
-      { header: 'سعر الوحدة',      key: 'unit',     width: 13 },
-      { header: 'شحن',             key: 'ship',     width: 10 },
-      { header: 'تحصيل المندوب',   key: 'collect',  width: 16 },
-      { header: 'النتيجة',         key: 'result',   width: 9  },
-      { header: 'الخطأ',           key: 'error',    width: 18 },
-      { header: 'مسجل مسبقاً',     key: 'prereg',   width: 13 },
+      { header: 'التاريخ',              key: 'date',          width: 14 },
+      { header: 'المندوب',              key: 'courier',       width: 14 },
+      { header: 'رقم الأوردر',          key: 'order',         width: 14 },
+      { header: 'SKU',                  key: 'sku',           width: 24 },
+      { header: 'الكمية',               key: 'qty',           width: 8  },
+      { header: 'سعر الوحدة',           key: 'unit',          width: 13 },
+      { header: 'خصم الوحدة',           key: 'unitDiscount',  width: 13 },
+      { header: 'شحن',                  key: 'ship',          width: 10 },
+      { header: 'خصم إضافي الأوردر',    key: 'orderDiscount', width: 18 },
+      { header: 'تحصيل المندوب',        key: 'collect',       width: 16 },
+      { header: 'صافي تحصيل الأوردر',   key: 'netCollect',    width: 18 },
+      { header: 'النتيجة',              key: 'result',        width: 9  },
+      { header: 'الخطأ',                key: 'error',         width: 18 },
+      { header: 'مسجل مسبقاً',          key: 'prereg',        width: 13 },
     ];
 
     const HEADER_BG  = 'FFD700';
@@ -1312,7 +1318,8 @@
       row.eachCell({ includeEmpty: false }, (cell, colNum) => {
         cell.font = { size: 10, name: 'Arial' };
         cell.alignment = { horizontal: 'center', vertical: 'middle', readingOrder: 'rightToLeft' };
-        if (colNum >= 5 && colNum <= 8 && cell.value !== null && cell.value !== '') {
+        // cols 5(qty), 6(unit), 7(unitDiscount), 8(ship), 9(orderDiscount), 10(collect), 11(netCollect) = numeric
+        if (colNum >= 5 && colNum <= 11 && cell.value !== null && cell.value !== '') {
           cell.numFmt = NUM_FMT;
           cell.alignment = { horizontal: 'center', vertical: 'middle' };
         }
@@ -1321,9 +1328,9 @@
           cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF' + FAIL_BG } };
         }
       });
-      // Result cell (col 9) gets solid red with white text for failed rows
+      // Result cell (col 12) gets solid red with white text for failed rows
       if (isFailed) {
-        const resultCell = row.getCell(9);
+        const resultCell = row.getCell(12);
         resultCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF' + FAIL_RESULT_BG } };
         resultCell.font = { bold: true, color: { argb: 'FFFFFFFF' }, size: 10, name: 'Arial' };
         resultCell.alignment = { horizontal: 'center', vertical: 'middle' };
@@ -1364,41 +1371,61 @@
           const r = ws.addRow({
             date,
             courier,
-            order:   o.orderName || '',
-            sku:     null,
-            qty:     null,
-            unit:    null,
-            ship:    null,
-            collect: null,
+            order:        o.orderName || '',
+            sku:          null,
+            qty:          null,
+            unit:         null,
+            unitDiscount: null,
+            ship:         null,
+            orderDiscount: null,
+            collect:      null,
+            netCollect:   null,
             result,
-            error:   o.error || '',
+            error:        o.error || '',
             prereg,
           });
           applyDataStyle(r, true);
         } else if (o.lineItems && o.lineItems.length > 0) {
           // ── Successful order with line items ──
+          const orderDiscountVal = o.orderDiscount ? parseFloat(o.orderDiscount) : null; // negative or null
+          const cc = (parseFloat(o.amount)||0) - (parseFloat(o.shippingAmount)||0);
+          // netCollect = courierCollect + orderDiscount (orderDiscount is already negative)
+          const netCollect = orderDiscountVal !== null ? cc + orderDiscountVal : cc;
+
           o.lineItems.forEach((li, i) => {
+            const unitDiscountVal = (li.unitDiscount !== null && li.unitDiscount !== undefined)
+              ? parseFloat(li.unitDiscount)   // already negative
+              : null;
             const r = ws.addRow({
-              date:    i === 0 ? date    : null,
+              date:         i === 0 ? date    : null,
               courier,
-              order:   i === 0 ? (o.orderName||'') : null,
-              sku:     li.sku || '',
-              qty:     parseFloat(li.quantity)  || 0,
-              unit:    parseFloat(li.unitPrice)  || 0,
-              ship:    i === 0 ? ship   : null,
-              collect: parseFloat(li.totalPrice) || 0,
-              result:  i === 0 ? result : null,
-              error:   i === 0 ? (o.error||'') : null,
-              prereg:  i === 0 ? prereg : null,
+              order:        i === 0 ? (o.orderName||'') : null,
+              sku:          li.sku || '',
+              qty:          parseFloat(li.quantity)  || 0,
+              unit:         parseFloat(li.unitPrice)  || 0,
+              unitDiscount: unitDiscountVal,                        // negative or null → cell empty if null
+              ship:         i === 0 ? ship   : null,
+              orderDiscount: i === 0 ? orderDiscountVal : null,    // negative or null, first row only
+              collect:      parseFloat(li.totalPrice) || 0,
+              netCollect:   i === 0 ? parseFloat(netCollect.toFixed(2)) : null,
+              result:       i === 0 ? result : null,
+              error:        i === 0 ? (o.error||'') : null,
+              prereg:       i === 0 ? prereg : null,
             });
             applyDataStyle(r, false);
           });
         } else {
           // ── Successful order without line items ──
+          const orderDiscountVal = o.orderDiscount ? parseFloat(o.orderDiscount) : null;
+          const netCollect = orderDiscountVal !== null ? cc + orderDiscountVal : cc;
           const r = ws.addRow({
             date, courier, order: o.orderName || '',
-            sku: '', qty: '', unit: '',
-            ship, collect: cc, result, error: o.error || '', prereg,
+            sku: '', qty: null, unit: null,
+            unitDiscount: null,
+            ship, orderDiscount: orderDiscountVal,
+            collect: cc,
+            netCollect: parseFloat(netCollect.toFixed(2)),
+            result, error: o.error || '', prereg,
           });
           applyDataStyle(r, false);
         }
